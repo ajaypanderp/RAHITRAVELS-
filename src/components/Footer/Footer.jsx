@@ -37,9 +37,9 @@ export const Footer = () => {
         <div className="footer-column">
           <h4>Contact Us</h4>
           <ul>
-            <li><a href="https://bento.me/ksr" target="_blank">https://bento.me/KSR</a></li>
-            <li>kishoresr01@gmail.com</li>
-            <li>123 Street, Bengaluru</li>
+            <li><i className="ri-phone-fill"></i> +91 91402 30030</li>
+            <li><i className="ri-mail-fill"></i> rahitravels@gmail.com</li>
+            <li><i className="ri-map-pin-fill"></i> Ayodhya, Uttar Pradesh</li>
           </ul>
         </div>
       </div>
@@ -47,12 +47,7 @@ export const Footer = () => {
       <div className="footer-line"></div>
 
       <div className="footer-bottom">
-        <p>Rahi Travels &copy; 2024</p>
-        <a href="https://bento.me/ksr" target="_blank">
-          <p className="my-name">
-            <i className="ri-sparkling-2-fill"></i> Kishore S R
-          </p>
-        </a>
+        <p>Rahi Travels &copy; 2024. All rights reserved.</p>
       </div>
     </footer>
   );

@@ -22,7 +22,15 @@ export const LoginSignupModal = ({ isOpen, onClose }) => {
       }
       onClose();
     } catch (err) {
-      setError(err.message);
+      let friendlyError = 'An error occurred. Please try again.';
+      if (err.message.includes('invalid-credential') || err.message.includes('user-not-found') || err.message.includes('wrong-password')) {
+        friendlyError = 'Invalid email or password.';
+      } else if (err.message.includes('email-already-in-use')) {
+        friendlyError = 'This email is already registered.';
+      } else if (err.message.includes('weak-password')) {
+        friendlyError = 'Password should be at least 6 characters.';
+      }
+      setError(friendlyError);
     }
   };
 

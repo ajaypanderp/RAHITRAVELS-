@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { db } from '../../firebaseConfig';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
 import { useAuth } from '../../context/AuthContext';
 import './BookingForm.css';
 
@@ -20,6 +20,19 @@ export const BookingForm = ({ preSelectedCar, onClose }) => {
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [availableCars, setAvailableCars] = useState([]);
+
+  useEffect(() => {
+    const fetchCars = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "cars"));
+        setAvailableCars(querySnapshot.docs.map(doc => doc.data()));
+      } catch (err) {
+        console.error("Failed to fetch cars", err);
+      }
+    };
+    fetchCars();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -75,7 +88,12 @@ export const BookingForm = ({ preSelectedCar, onClose }) => {
           <input type="date" name="date" value={formData.date} onChange={handleChange} required />
           <input type="time" name="time" value={formData.time} onChange={handleChange} required />
         </div>
-        <input type="text" name="car" placeholder="Preferred Car (Optional)" value={formData.car} onChange={handleChange} />
+        <select name="car" value={formData.car} onChange={handleChange} required>
+          <option value="" disabled>Select a Car</option>
+          {availableCars.map((c, index) => (
+            <option key={index} value={c.name}>{c.name} ({c.category}) - {c.pricePerKm}</option>
+          ))}
+        </select>
         
         <button type="submit" disabled={loading} className="book-btn">
           {loading ? 'Submitting...' : 'Submit Booking'}
