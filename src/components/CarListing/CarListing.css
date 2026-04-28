@@ -1,0 +1,150 @@
+.car-listing-section {
+  padding: 80px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.section-header h2 {
+  font-size: 2.5rem;
+  color: #1e293b;
+  margin-bottom: 10px;
+}
+
+.section-header .highlight {
+  color: #2563eb;
+}
+
+.section-header p {
+  color: #64748b;
+  font-size: 1.1rem;
+}
+
+.car-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 30px;
+}
+
+.car-item {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.car-item:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
+
+.car-image-container {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+}
+
+.car-image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.car-badge {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: rgba(37, 99, 235, 0.9);
+  color: white;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.car-details {
+  padding: 25px;
+}
+
+.car-details h3 {
+  font-size: 1.4rem;
+  color: #1e293b;
+  margin-bottom: 15px;
+}
+
+.car-price {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin-bottom: 20px;
+}
+
+.price-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #2563eb;
+}
+
+.price-unit {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.car-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 25px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.car-features li {
+  font-size: 0.9rem;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.car-features li i {
+  color: #2563eb;
+}
+
+.book-btn-primary {
+  width: 100%;
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.book-btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.car-listing-loading {
+  text-align: center;
+  padding: 100px 20px;
+  font-size: 1.2rem;
+  color: #64748b;
+}
+
+.no-cars {
+  text-align: center;
+  padding: 50px 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+  color: #64748b;
+}

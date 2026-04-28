@@ -8,6 +8,7 @@ import { Navbar } from './components/NavBar/NavBar'
 import { HeroSection } from './components/HeroSection/HeroSection'
 import { Gallery } from './components/Gallery/Gallery'
 import { CarBrands } from './components/CarBrands/CarBrands'
+import { CarListing } from './components/CarListing/CarListing'
 import { Working } from './components/Working/Working'
 import { Services } from './components/Services/Services'
 import { Download } from './components/Download/Download'
@@ -32,6 +33,7 @@ const Home = () => (
     <HeroSection />
     <Gallery />
     <CarBrands />
+    <CarListing />
     <Working />
     <Services />
     <Download />

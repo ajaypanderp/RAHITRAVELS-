@@ -36,7 +36,7 @@ export const Download = () => {
         </div>
         <div className="action-buttons">
           <a href="#rent" className="footer-action-btn rent-btn">Rent a Car</a>
-          <a href="https://wa.me/919140230030" className="footer-action-btn contact-btn">Contact Us</a>
+          <a href="https://wa.me/919140230030" className="footer-action-btn download-contact-btn">Contact Us</a>
         </div>
       </div>
 
