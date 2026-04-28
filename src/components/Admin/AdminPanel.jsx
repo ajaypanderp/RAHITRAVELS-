@@ -4,7 +4,10 @@ import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from 'firebase
 import './AdminPanel.css';
 
 export const AdminPanel = () => {
-  const [activeTab, setActiveTab] = useState('cars'); // 'cars' or 'bookings'
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  
+  const [activeTab, setActiveTab] = useState('cars'); // 'cars', 'bookings', 'gallery'
   
   // Cars & Categories State
   const [cars, setCars] = useState([]);
@@ -18,6 +21,11 @@ export const AdminPanel = () => {
 
   // Bookings State
   const [bookings, setBookings] = useState([]);
+  
+  // Gallery State
+  const [galleryPhotos, setGalleryPhotos] = useState([]);
+  const [galleryFile, setGalleryFile] = useState(null);
+  const [galleryUploading, setGalleryUploading] = useState(false);
 
   // Fetch Data
   const fetchCategories = async () => {
@@ -40,12 +48,47 @@ export const AdminPanel = () => {
     data.sort((a, b) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
     setBookings(data);
   };
+  
+  const fetchGalleryPhotos = async () => {
+    const querySnapshot = await getDocs(collection(db, "gallery"));
+    setGalleryPhotos(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+  }
 
   useEffect(() => { 
-    fetchCategories();
-    fetchCars(); 
-    fetchBookings();
-  }, []);
+    if (isAuthenticated) {
+      fetchCategories();
+      fetchCars(); 
+      fetchBookings();
+      fetchGalleryPhotos();
+    }
+  }, [isAuthenticated]);
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (passwordInput === 'Rahi@2026') {
+      setIsAuthenticated(true);
+    } else {
+      alert('Incorrect Password');
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="admin-login-container">
+        <form onSubmit={handleLogin} className="admin-login-form">
+          <h2>Admin Login</h2>
+          <input 
+            type="password" 
+            placeholder="Enter Admin Password" 
+            value={passwordInput} 
+            onChange={(e) => setPasswordInput(e.target.value)} 
+            required 
+          />
+          <button type="submit">Login</button>
+        </form>
+      </div>
+    );
+  }
 
   // Category Actions
   const handleAddCategory = async () => {
@@ -126,14 +169,43 @@ export const AdminPanel = () => {
       fetchBookings();
     }
   };
+  
+  // Gallery Actions
+  const handleAddGalleryPhoto = async (e) => {
+    e.preventDefault();
+    if (!galleryFile) return;
+    setGalleryUploading(true);
+    try {
+      const url = await uploadToCloudinary(galleryFile);
+      if (url) {
+        await addDoc(collection(db, "gallery"), { url });
+        alert("Photo added to gallery!");
+        setGalleryFile(null);
+        fetchGalleryPhotos();
+      } else {
+        alert("Failed to upload image. Check Cloudinary settings.");
+      }
+    } catch (err) {
+      alert("Error saving photo: " + err.message);
+    }
+    setGalleryUploading(false);
+  };
+  
+  const handleDeleteGalleryPhoto = async (id) => {
+    if(window.confirm("Delete this photo from gallery?")) {
+      await deleteDoc(doc(db, "gallery", id));
+      fetchGalleryPhotos();
+    }
+  };
 
   return (
     <div className="admin-dashboard">
       <div className="admin-header">
         <h2>Rahi Travels Admin</h2>
         <div className="admin-tabs">
-          <button className={activeTab === 'cars' ? 'active-tab' : ''} onClick={() => setActiveTab('cars')}>Manage Cars & Categories</button>
+          <button className={activeTab === 'cars' ? 'active-tab' : ''} onClick={() => setActiveTab('cars')}>Manage Cars</button>
           <button className={activeTab === 'bookings' ? 'active-tab' : ''} onClick={() => setActiveTab('bookings')}>User Bookings</button>
+          <button className={activeTab === 'gallery' ? 'active-tab' : ''} onClick={() => setActiveTab('gallery')}>Gallery Manager</button>
         </div>
       </div>
 
@@ -240,6 +312,32 @@ export const AdminPanel = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+      
+      {activeTab === 'gallery' && (
+        <div className="admin-content full-width">
+          <div className="card" style={{ marginBottom: '20px', maxWidth: '500px' }}>
+            <h3>Upload to "Our Trust Moments"</h3>
+            <form onSubmit={handleAddGalleryPhoto} className="admin-form">
+              <input type="file" onChange={(e) => setGalleryFile(e.target.files[0])} required />
+              <button type="submit" disabled={galleryUploading} className="primary-btn">
+                {galleryUploading ? 'Uploading...' : 'Add Photo'}
+              </button>
+            </form>
+          </div>
+          
+          <h3>Gallery Images ({galleryPhotos.length}/30)</h3>
+          <div className="car-grid">
+            {galleryPhotos.map(photo => (
+              <div key={photo.id} className="car-card">
+                <img src={photo.url} alt="Gallery" />
+                <div className="car-info" style={{ textAlign: 'center' }}>
+                  <button onClick={() => handleDeleteGalleryPhoto(photo.id)} className="delete-btn" style={{ width: '100%' }}>Delete</button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

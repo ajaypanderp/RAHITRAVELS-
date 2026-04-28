@@ -83,9 +83,9 @@ export const Navbar = () => {
             <li><a href="/" onClick={scrollToTop}>Home</a></li>
             <li><a href="/#rent">Rent</a></li>
             <li><a href="/#services">Services</a></li>
-            {/* Redirects to an external About page or a new route */}
+            <li><a href="/#gallery">Gallery</a></li>
             <li><a href="/about-us">About Us</a></li> 
-            <li><a href="#" onClick={openWhatsApp}><i className="ri-whatsapp-line"></i> WhatsApp</a></li>
+            <li><a href="https://wa.me/919140230030" target="_blank"><i className="ri-whatsapp-line"></i> WhatsApp</a></li>
             {currentUser && <li><a href="/my-bookings">My Bookings</a></li>}
           </ul>
 
@@ -119,10 +119,11 @@ export const Navbar = () => {
             <ul>
               {[
                 { text: "Home", icon: "ri-home-4-line", action: scrollToTop },
-                { text: "Rent", icon: "ri-roadster-line", href: "#rent" },
-                { text: "Services", icon: "ri-shield-flash-line", href: "#services" },
+                { text: "Rent", icon: "ri-roadster-line", href: "/#rent" },
+                { text: "Services", icon: "ri-shield-flash-line", href: "/#services" },
+                { text: "Gallery", icon: "ri-image-line", href: "/#gallery" },
                 { text: "About Us", icon: "ri-information-line", href: "/about-us" },
-                { text: "WhatsApp", icon: "ri-whatsapp-line", action: openWhatsApp },
+                { text: "WhatsApp", icon: "ri-whatsapp-line", href: "https://wa.me/919140230030" },
               ].map((item, index) => (
                 <li key={item.text} ref={(el) => (linksRef.current[index] = el)}>
                   <a 

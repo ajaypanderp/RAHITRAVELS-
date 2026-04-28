@@ -31,29 +31,12 @@ export const Download = () => {
     <section className="download" id="contact">
       <div className="left-text">
         <div className="only-text">
-          <h2>Download the free Rahi Travels app</h2>
-          <p>for faster, easier booking and exclusive deals.</p>
+          <h2>Ready to Start Your Journey?</h2>
+          <p>Book your perfect ride today and experience the best of Rahi Travels.</p>
         </div>
-        <div className="app-links">
-          <button className="app-btn">
-            <div className="app-logo">
-              <img src={appleImage} alt="Apple" />
-            </div>
-            <div className="app-text">
-              <p>Download on the</p>
-              <h4>Apple Store</h4>
-            </div>
-          </button>
-
-          <button className="app-btn">
-            <div className="app-logo">
-              <img src={playStoreImage} alt="Play Store" />
-            </div>
-            <div className="app-text">
-              <p>Get it from</p>
-              <h4>Google Play</h4>
-            </div>
-          </button>
+        <div className="action-buttons">
+          <a href="#rent" className="footer-action-btn rent-btn">Rent a Car</a>
+          <a href="https://wa.me/919140230030" className="footer-action-btn contact-btn">Contact Us</a>
         </div>
       </div>
 

@@ -6,6 +6,7 @@ import './index.css'
 // Layout/Page Components
 import { Navbar } from './components/NavBar/NavBar'
 import { HeroSection } from './components/HeroSection/HeroSection'
+import { Gallery } from './components/Gallery/Gallery'
 import { CarBrands } from './components/CarBrands/CarBrands'
 import { Working } from './components/Working/Working'
 import { Services } from './components/Services/Services'
@@ -21,11 +22,15 @@ import { FloatingContact } from './components/FloatingContact/FloatingContact'
 // Auth Context
 import { AuthProvider } from './context/AuthContext'
 import { UserHistory } from './components/UserHistory/UserHistory'
+import { AboutUs } from './pages/AboutUs'
+import { Terms } from './pages/Terms'
+import { FAQ } from './pages/FAQ'
 
 // The Main Website View (Home)
 const Home = () => (
   <>
     <HeroSection />
+    <Gallery />
     <CarBrands />
     <Working />
     <Services />
@@ -49,13 +54,10 @@ createRoot(document.getElementById('root')).render(
           {/* User History Route */}
           <Route path="/my-bookings" element={<UserHistory />} />
           
-          {/* About Us Page Redirect (You can replace the div with a component) */}
-          <Route path="/about-us" element={
-            <div style={{padding: '100px 20px', textAlign: 'center'}}>
-              <h1>About Rahi Travels</h1>
-              <p>Welcome to Rahi Travels, your trusted partner for easy and affordable rentals.</p>
-            </div>
-          } />
+          {/* Static Pages */}
+          <Route path="/about-us" element={<AboutUs />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/faqs" element={<FAQ />} />
         </Routes>
         <Footer />
       </BrowserRouter>

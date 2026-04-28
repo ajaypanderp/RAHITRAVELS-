@@ -17,14 +17,20 @@ export const db = getFirestore(app);
 
 // Cloudinary Upload Function
 export const uploadToCloudinary = async (file) => {
+  if (!file) return "";
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("upload_preset", "your_unsigned_preset_name"); // REPLACE WITH YOUR PRESET NAME
+  formData.append("upload_preset", "Rahi_tours"); // actual preset name
 
-  const response = await fetch("https://api.cloudinary.com/v1_1/your_cloud_name/image/upload", {
-    method: "POST",
-    body: formData,
-  });
-  const data = await response.json();
-  return data.secure_url;
+  try {
+    const response = await fetch("https://api.cloudinary.com/v1_1/dr6grdcvt/image/upload", {
+      method: "POST",
+      body: formData,
+    });
+    const data = await response.json();
+    return data.secure_url || "";
+  } catch (error) {
+    console.error("Cloudinary Upload Error:", error);
+    return "https://via.placeholder.com/300?text=No+Image+Available"; // Fallback URL
+  }
 };

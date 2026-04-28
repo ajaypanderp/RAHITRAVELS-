@@ -1,36 +1,35 @@
+import React from "react";
 import "./Footer.css";
 
 export const Footer = () => {
+  const currentYear = new Date().getFullYear();
+
   return (
     <footer className="footer">
       <div className="footer-container">
         <div className="footer-column">
           <h4>Company</h4>
           <ul>
-            <li>About Us</li>
-            <li>Careers</li>
-            <li>Privacy Policy</li>
-            <li>Terms & Conditions</li>
+            <li><a href="/about-us">About Us</a></li>
+            <li><a href="/terms">Privacy Policy</a></li>
+            <li><a href="/terms">Terms & Conditions</a></li>
           </ul>
         </div>
 
         <div className="footer-column">
           <h4>Quick Links</h4>
           <ul>
-            <li>Rent a Car</li>
-            <li>Services</li>
-            <li>Contact</li>
-            <li>Our Blogs</li>
+            <li><a href="/#rent">Rent a Car</a></li>
+            <li><a href="/#services">Services</a></li>
+            <li><a href="https://wa.me/919140230030">Contact</a></li>
           </ul>
         </div>
 
         <div className="footer-column">
           <h4>Support</h4>
           <ul>
-            <li>FAQs</li>
-            <li>Help Center</li>
-            <li>Booking Guide</li>
-            <li>Account Settings</li>
+            <li><a href="/faqs">FAQs</a></li>
+            <li><a href="/faqs">Booking Guide</a></li>
           </ul>
         </div>
 
@@ -47,7 +46,7 @@ export const Footer = () => {
       <div className="footer-line"></div>
 
       <div className="footer-bottom">
-        <p>Rahi Travels &copy; 2024. All rights reserved.</p>
+        <p>Rahi Travels &copy; {currentYear}. All rights reserved.</p>
       </div>
     </footer>
   );

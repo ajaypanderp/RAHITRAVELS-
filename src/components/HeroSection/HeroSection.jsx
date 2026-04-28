@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import "./HeroSection.css";
-import appleImage from "../../assets/Apple.png";
-import playStoreImage from "../../assets/PlayStore.png";
+
 import CarImage from "../../assets/HeroCar.png";
 import { BookingModal } from "../Booking/BookingModal";
 
@@ -45,27 +44,6 @@ export const HeroSection = () => {
           Book Your Ride
         </button>
 
-        <div className="app-links" style={{marginTop: '20px'}}>
-          <button className="app-btn">
-            <div className="app-logo">
-              <img src={appleImage} alt="Apple" />
-            </div>
-            <div className="app-text">
-              <p>Download on the</p>
-              <h4>Apple Store</h4>
-            </div>
-          </button>
-
-          <button className="app-btn">
-            <div className="app-logo">
-              <img src={playStoreImage} alt="Play Store" />
-            </div>
-            <div className="app-text">
-              <p>Get it from</p>
-              <h4>Google Play</h4>
-            </div>
-          </button>
-        </div>
       </section>
 
       <section className="hero-image-container" >
