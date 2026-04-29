@@ -7,7 +7,7 @@ export const AdminPanel = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   
-  const [activeTab, setActiveTab] = useState('cars'); // 'cars', 'bookings', 'gallery'
+  const [activeTab, setActiveTab] = useState('cars'); // 'cars', 'bookings', 'gallery', 'hero'
   
   // Cars & Categories State
   const [cars, setCars] = useState([]);
@@ -26,6 +26,12 @@ export const AdminPanel = () => {
   const [galleryPhotos, setGalleryPhotos] = useState([]);
   const [galleryFile, setGalleryFile] = useState(null);
   const [galleryUploading, setGalleryUploading] = useState(false);
+
+  // Hero State
+  const [heroImages, setHeroImages] = useState([]);
+  const [heroFile, setHeroFile] = useState(null);
+  const [heroUploading, setHeroUploading] = useState(false);
+  const [heroRemoveBg, setHeroRemoveBg] = useState(false);
 
   // Fetch Data
   const fetchCategories = async () => {
@@ -54,12 +60,18 @@ export const AdminPanel = () => {
     setGalleryPhotos(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
   }
 
+  const fetchHeroImages = async () => {
+    const querySnapshot = await getDocs(collection(db, "hero_images"));
+    setHeroImages(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+  };
+
   useEffect(() => { 
     if (isAuthenticated) {
       fetchCategories();
       fetchCars(); 
       fetchBookings();
       fetchGalleryPhotos();
+      fetchHeroImages();
     }
   }, [isAuthenticated]);
 
@@ -198,6 +210,46 @@ export const AdminPanel = () => {
     }
   };
 
+  // Hero Actions
+  const handleAddHeroImage = async (e) => {
+    e.preventDefault();
+    if (!heroFile) return;
+    setHeroUploading(true);
+    try {
+      const url = await uploadToCloudinary(heroFile);
+      if (url) {
+        await addDoc(collection(db, "hero_images"), { 
+          url, 
+          removeBg: heroRemoveBg,
+          createdAt: new Date() 
+        });
+        alert("Hero image added!");
+        setHeroFile(null);
+        setHeroRemoveBg(false);
+        fetchHeroImages();
+      }
+    } catch (err) {
+      alert("Error saving hero image: " + err.message);
+    }
+    setHeroUploading(false);
+  };
+
+  const handleDeleteHeroImage = async (id) => {
+    if(window.confirm("Delete this hero image?")) {
+      await deleteDoc(doc(db, "hero_images", id));
+      fetchHeroImages();
+    }
+  };
+
+  const handleToggleHeroBgRemoval = async (id, currentVal) => {
+    try {
+      await updateDoc(doc(db, "hero_images", id), { removeBg: !currentVal });
+      fetchHeroImages();
+    } catch (err) {
+      alert("Error updating background removal setting: " + err.message);
+    }
+  };
+
   return (
     <div className="admin-dashboard">
       <div className="admin-header">
@@ -206,6 +258,7 @@ export const AdminPanel = () => {
           <button className={activeTab === 'cars' ? 'active-tab' : ''} onClick={() => setActiveTab('cars')}>Manage Cars</button>
           <button className={activeTab === 'bookings' ? 'active-tab' : ''} onClick={() => setActiveTab('bookings')}>User Bookings</button>
           <button className={activeTab === 'gallery' ? 'active-tab' : ''} onClick={() => setActiveTab('gallery')}>Gallery Manager</button>
+          <button className={activeTab === 'hero' ? 'active-tab' : ''} onClick={() => setActiveTab('hero')}>Hero Manager</button>
         </div>
       </div>
 
@@ -335,6 +388,41 @@ export const AdminPanel = () => {
                 <img src={photo.url} alt="Gallery" />
                 <div className="car-info" style={{ textAlign: 'center' }}>
                   <button onClick={() => handleDeleteGalleryPhoto(photo.id)} className="delete-btn" style={{ width: '100%' }}>Delete</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'hero' && (
+        <div className="admin-content full-width">
+          <div className="card" style={{ marginBottom: '20px', maxWidth: '500px' }}>
+            <h3>Manage Hero Images (Slideshow)</h3>
+            <p style={{ color: 'gray', marginBottom: '10px' }}>If 1 photo: No slideshow. If &gt;1 photos: Slideshow enabled.</p>
+            <form onSubmit={handleAddHeroImage} className="admin-form">
+              <input type="file" onChange={(e) => setHeroFile(e.target.files[0])} required />
+              <label className="checkbox-label">
+                <input type="checkbox" checked={heroRemoveBg} onChange={(e) => setHeroRemoveBg(e.target.checked)} />
+                Auto Background Removal (Cloudinary AI)
+              </label>
+              <button type="submit" disabled={heroUploading} className="primary-btn">
+                {heroUploading ? 'Uploading...' : 'Add Hero Photo'}
+              </button>
+            </form>
+          </div>
+          
+          <h3>Hero Images ({heroImages.length})</h3>
+          <div className="car-grid">
+            {heroImages.map(img => (
+              <div key={img.id} className="car-card">
+                <img src={img.url} alt="Hero" />
+                <div className="car-info" style={{ textAlign: 'center' }}>
+                  <label className="checkbox-label" style={{ marginBottom: '10px', display: 'block' }}>
+                    <input type="checkbox" checked={img.removeBg || false} onChange={() => handleToggleHeroBgRemoval(img.id, img.removeBg)} />
+                    Remove BG
+                  </label>
+                  <button onClick={() => handleDeleteHeroImage(img.id)} className="delete-btn" style={{ width: '100%' }}>Delete</button>
                 </div>
               </div>
             ))}
