@@ -14,14 +14,14 @@ export const Download = () => {
 
     gsap.fromTo(
       carImage,
-      { x: "100%" }, 
+      { x: "80%" }, 
       {
-        x: "0%", 
+        x: "-20%", 
         scrollTrigger: {
-          trigger: carImage,
-          start: "bottom bottom", 
-          end: "top top", 
-          scrub: true, 
+          trigger: ".download",
+          start: "top bottom", 
+          end: "bottom top", 
+          scrub: 1.5, 
         },
       }
     );

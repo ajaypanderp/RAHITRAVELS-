@@ -31,7 +31,7 @@ export const CarListing = () => {
   if (loading) return <div className="car-listing-loading">Finding the best cars for you...</div>;
 
   return (
-    <section className="car-listing-section">
+    <section className="car-listing-section" id="rent">
       <div className="section-header">
         <h2>Choose Your <span className="highlight">Perfect Ride</span></h2>
         <p>Explore our premium fleet of well-maintained vehicles for a comfortable journey.</p>

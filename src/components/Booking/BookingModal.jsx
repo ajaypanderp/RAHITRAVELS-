@@ -6,7 +6,7 @@ export const BookingModal = ({ isOpen, onClose, preSelectedCar }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
+    <div className="booking-modal-overlay">
       <div className="modal-content">
         <button className="close-btn" onClick={onClose}>&times;</button>
         <BookingForm preSelectedCar={preSelectedCar} onClose={onClose} />

@@ -56,7 +56,7 @@ export const CarBrands = () => {
   }, []);
 
   return (
-    <section className="car-brands-section" id="rent" ref={containerRef}>
+    <section className="car-brands-section" ref={containerRef}>
       <div className="car-heading">
         <h4>Our Partners</h4>
       </div>
