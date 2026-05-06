@@ -83,7 +83,7 @@ export const Navbar = () => {
             <li><a href="/" onClick={scrollToTop}>Home</a></li>
             <li><a href="/#rent">Rent</a></li>
             <li><a href="/#services">Services</a></li>
-            <li><a href="/#gallery">Gallery</a></li>
+            <li><a href="/gallery">Gallery</a></li>
             <li><a href="/about-us">About Us</a></li> 
             <li><a href="https://wa.me/919194230030" target="_blank"><i className="ri-whatsapp-line"></i> WhatsApp</a></li>
             {currentUser && <li><a href="/my-bookings">My Bookings</a></li>}
@@ -121,7 +121,7 @@ export const Navbar = () => {
                 { text: "Home", icon: "ri-home-4-line", action: scrollToTop },
                 { text: "Rent", icon: "ri-roadster-line", href: "/#rent" },
                 { text: "Services", icon: "ri-shield-flash-line", href: "/#services" },
-                { text: "Gallery", icon: "ri-image-line", href: "/#gallery" },
+                { text: "Gallery", icon: "ri-image-line", href: "/gallery" },
                 { text: "About Us", icon: "ri-information-line", href: "/about-us" },
                 { text: "WhatsApp", icon: "ri-whatsapp-line", href: "https://wa.me/919194230030" },
               ].map((item, index) => (

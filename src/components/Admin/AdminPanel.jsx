@@ -16,7 +16,7 @@ export const AdminPanel = () => {
   
   // Form State for Add/Edit Car
   const [editingCarId, setEditingCarId] = useState(null);
-  const [formData, setFormData] = useState({ name: '', price: '', category: '', seats: '5', imageFile: null, existingImage: '', galleryUrls: ['', '', '', '', '', '', ''] });
+  const [formData, setFormData] = useState({ name: '', price: '', category: '', seats: '5', imageFile: null, existingImage: '', galleryUrls: ['', '', '', '', '', '', ''], galleryFiles: [null, null, null, null, null, null, null] });
   const [uploading, setUploading] = useState(false);
   
   // Users State
@@ -24,7 +24,7 @@ export const AdminPanel = () => {
 
   // Places State
   const [places, setPlaces] = useState([]);
-  const [placeForm, setPlaceForm] = useState({ name: '', photoUrl: '', websiteLink: '' });
+  const [placeForm, setPlaceForm] = useState({ name: '', photoUrl: '' });
 
   // Bookings State
   const [bookings, setBookings] = useState([]);
@@ -146,12 +146,22 @@ export const AdminPanel = () => {
         imageUrl = await uploadToCloudinary(formData.imageFile);
       }
 
+      let finalGalleryUrls = [];
+      for (let i = 0; i < 7; i++) {
+        if (formData.galleryFiles[i]) {
+          const url = await uploadToCloudinary(formData.galleryFiles[i]);
+          if (url) finalGalleryUrls.push(url);
+        } else if (formData.galleryUrls[i] && formData.galleryUrls[i].trim() !== '') {
+          finalGalleryUrls.push(formData.galleryUrls[i]);
+        }
+      }
+
       const carData = {
         name: formData.name,
         pricePerKm: formData.price,
         category: formData.category,
         seats: formData.seats,
-        galleryUrls: formData.galleryUrls.filter(url => url.trim() !== ''),
+        galleryUrls: finalGalleryUrls,
         image: imageUrl
       };
 
@@ -163,7 +173,7 @@ export const AdminPanel = () => {
         alert("Car Added Successfully!");
       }
 
-      setFormData({ name: '', price: '', category: categories.length > 0 ? categories[0].name : '', seats: '5', imageFile: null, existingImage: '', galleryUrls: ['', '', '', '', '', '', ''] });
+      setFormData({ name: '', price: '', category: categories.length > 0 ? categories[0].name : '', seats: '5', imageFile: null, existingImage: '', galleryUrls: ['', '', '', '', '', '', ''], galleryFiles: [null, null, null, null, null, null, null] });
       setEditingCarId(null);
       fetchCars();
     } catch(err) {
@@ -181,7 +191,8 @@ export const AdminPanel = () => {
       seats: car.seats || '5',
       imageFile: null,
       existingImage: car.image,
-      galleryUrls: car.galleryUrls ? [...car.galleryUrls, '', '', '', '', '', '', ''].slice(0, 7) : ['', '', '', '', '', '', '']
+      galleryUrls: car.galleryUrls ? [...car.galleryUrls, '', '', '', '', '', '', ''].slice(0, 7) : ['', '', '', '', '', '', ''],
+      galleryFiles: [null, null, null, null, null, null, null]
     });
   };
 
@@ -194,7 +205,7 @@ export const AdminPanel = () => {
 
   const cancelEdit = () => {
     setEditingCarId(null);
-    setFormData({ name: '', price: '', category: categories.length > 0 ? categories[0].name : '', seats: '5', imageFile: null, existingImage: '', galleryUrls: ['', '', '', '', '', '', ''] });
+    setFormData({ name: '', price: '', category: categories.length > 0 ? categories[0].name : '', seats: '5', imageFile: null, existingImage: '', galleryUrls: ['', '', '', '', '', '', ''], galleryFiles: [null, null, null, null, null, null, null] });
   };
 
   // Booking Actions
@@ -280,7 +291,7 @@ export const AdminPanel = () => {
     try {
       await addDoc(collection(db, "places"), placeForm);
       alert("Place Added Successfully!");
-      setPlaceForm({ name: '', photoUrl: '', websiteLink: '' });
+      setPlaceForm({ name: '', photoUrl: '' });
       fetchPlaces();
     } catch(err) {
       alert("Error adding place: " + err.message);
@@ -350,20 +361,25 @@ export const AdminPanel = () => {
                 )}
                 <input type="file" onChange={(e) => setFormData({...formData, imageFile: e.target.files[0]})} required={!editingCarId} />
                 
-                <h4 style={{marginTop: '15px'}}>Car Gallery URLs (Max 7)</h4>
+                <h4 style={{marginTop: '15px'}}>Car Gallery Images (Max 7)</h4>
                 {formData.galleryUrls.map((url, i) => (
-                  <input 
-                    key={i} 
-                    type="text" 
-                    placeholder={`Gallery Image URL ${i + 1}`} 
-                    value={url} 
-                    onChange={(e) => {
-                      const newUrls = [...formData.galleryUrls];
-                      newUrls[i] = e.target.value;
-                      setFormData({...formData, galleryUrls: newUrls});
-                    }} 
-                    style={{ marginBottom: '5px' }}
-                  />
+                  <div key={i} style={{ marginBottom: '10px' }}>
+                    {url && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '5px' }}>
+                        <img src={url} alt={`Gallery ${i+1}`} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }} />
+                        <small>Existing Image {i+1}</small>
+                      </div>
+                    )}
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={(e) => {
+                        const newFiles = [...formData.galleryFiles];
+                        newFiles[i] = e.target.files[0];
+                        setFormData({...formData, galleryFiles: newFiles});
+                      }} 
+                    />
+                  </div>
                 ))}
                 
                 <div className="form-actions" style={{marginTop: '15px'}}>
@@ -541,7 +557,6 @@ export const AdminPanel = () => {
             <form onSubmit={handleAddPlace} className="admin-form">
               <input type="text" placeholder="Place Name" required value={placeForm.name} onChange={(e) => setPlaceForm({...placeForm, name: e.target.value})} />
               <input type="url" placeholder="Photo URL (Direct Link)" required value={placeForm.photoUrl} onChange={(e) => setPlaceForm({...placeForm, photoUrl: e.target.value})} />
-              <input type="url" placeholder="Website Link (Optional)" value={placeForm.websiteLink} onChange={(e) => setPlaceForm({...placeForm, websiteLink: e.target.value})} />
               <button type="submit" className="primary-btn">Add Place</button>
             </form>
           </div>
@@ -553,8 +568,7 @@ export const AdminPanel = () => {
                 <img src={p.photoUrl} alt={p.name} />
                 <div className="car-info">
                   <h4>{p.name}</h4>
-                  {p.websiteLink && <a href={p.websiteLink} target="_blank" rel="noopener noreferrer" style={{ display: 'block', marginBottom: '10px', color: '#2563eb' }}>Visit Site</a>}
-                  <button onClick={() => handleDeletePlace(p.id)} className="delete-btn" style={{ width: '100%' }}>Delete</button>
+                  <button onClick={() => handleDeletePlace(p.id)} className="delete-btn" style={{ width: '100%', marginTop: '10px' }}>Delete</button>
                 </div>
               </div>
             ))}

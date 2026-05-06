@@ -22,6 +22,7 @@ export const BookingForm = ({ preSelectedCar, onClose }) => {
   const [success, setSuccess] = useState(false);
   const [availableCars, setAvailableCars] = useState([]);
   const [selectedCarDetails, setSelectedCarDetails] = useState(null);
+  const [currentDisplayImage, setCurrentDisplayImage] = useState('');
 
   useEffect(() => {
     const fetchCars = async () => {
@@ -34,6 +35,7 @@ export const BookingForm = ({ preSelectedCar, onClose }) => {
         if (preSelectedCar) {
           const details = carList.find(c => c.name === preSelectedCar);
           setSelectedCarDetails(details);
+          if(details) setCurrentDisplayImage(details.image);
         }
       } catch (err) {
         console.error("Failed to fetch cars", err);
@@ -49,6 +51,7 @@ export const BookingForm = ({ preSelectedCar, onClose }) => {
     if (name === 'car') {
       const details = availableCars.find(c => c.name === value);
       setSelectedCarDetails(details);
+      if(details) setCurrentDisplayImage(details.image);
     }
   };
 
@@ -90,10 +93,32 @@ export const BookingForm = ({ preSelectedCar, onClose }) => {
 
   return (
     <div className="booking-split-container">
-      <div className="car-preview-side">
+      <div className="car-preview-side" style={{ display: 'flex', flexDirection: 'column' }}>
         {selectedCarDetails ? (
           <>
-            <img src={selectedCarDetails.image || 'https://via.placeholder.com/400x250?text=No+Image'} alt={selectedCarDetails.name} />
+            <img src={currentDisplayImage || 'https://via.placeholder.com/400x250?text=No+Image'} alt={selectedCarDetails.name} style={{ width: '100%', height: '250px', objectFit: 'cover', borderRadius: '8px', marginBottom: '15px' }} />
+            
+            {/* Gallery Thumbnails */}
+            {selectedCarDetails.galleryUrls && selectedCarDetails.galleryUrls.length > 0 && (
+              <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', marginBottom: '20px', paddingBottom: '10px' }}>
+                <img 
+                  src={selectedCarDetails.image} 
+                  alt="Main" 
+                  onClick={() => setCurrentDisplayImage(selectedCarDetails.image)}
+                  style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', cursor: 'pointer', border: currentDisplayImage === selectedCarDetails.image ? '2px solid #2563eb' : '2px solid transparent', flexShrink: 0 }} 
+                />
+                {selectedCarDetails.galleryUrls.map((url, i) => (
+                  <img 
+                    key={i} 
+                    src={url} 
+                    alt={`Gallery ${i}`} 
+                    onClick={() => setCurrentDisplayImage(url)}
+                    style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', cursor: 'pointer', border: currentDisplayImage === url ? '2px solid #2563eb' : '2px solid transparent', flexShrink: 0 }} 
+                  />
+                ))}
+              </div>
+            )}
+
             <h2>{selectedCarDetails.name}</h2>
             <div className="price">{selectedCarDetails.pricePerKm}</div>
             <ul className="features">

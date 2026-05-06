@@ -35,11 +35,6 @@ export const Places = () => {
             <img src={place.photoUrl} alt={place.name} style={{ width: '100%', height: '200px', objectFit: 'cover' }} />
             <div style={{ padding: '20px', textAlign: 'center' }}>
               <h3 style={{ fontSize: '1.25rem', color: '#1e293b', marginBottom: '10px' }}>{place.name}</h3>
-              {place.websiteLink && (
-                <a href={place.websiteLink} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', padding: '8px 16px', background: '#e0e7ff', color: '#4f46e5', borderRadius: '20px', textDecoration: 'none', fontWeight: 'bold' }}>
-                  Learn More
-                </a>
-              )}
             </div>
           </div>
         ))}

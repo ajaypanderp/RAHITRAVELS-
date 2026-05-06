@@ -29,60 +29,52 @@ const UserHistory = lazy(() => import('./components/UserHistory/UserHistory').th
 const AboutUs = lazy(() => import('./pages/AboutUs').then(module => ({ default: module.AboutUs })));
 const Terms = lazy(() => import('./pages/Terms').then(module => ({ default: module.Terms })));
 const FAQ = lazy(() => import('./pages/FAQ').then(module => ({ default: module.FAQ })));
+const GalleryPage = lazy(() => import('./pages/GalleryPage').then(module => ({ default: module.GalleryPage })));
 
 // The Main Website View (Home)
 const Home = () => (
   <>
-    <Suspense fallback={<Loader />}>
-      <HeroSection />
-    </Suspense>
-    <Suspense fallback={<Loader />}>
-      <CarSlideshow />
-    </Suspense>
-    <Suspense fallback={<Loader />}>
-      <Places />
-    </Suspense>
-    <Suspense fallback={<Loader />}>
-      <Gallery />
-    </Suspense>
-    <Suspense fallback={<Loader />}>
-      <CarListing />
-    </Suspense>
-    <Suspense fallback={<Loader />}>
-      <Working />
-    </Suspense>
-    <Suspense fallback={<Loader />}>
-      <Services />
-    </Suspense>
-    <Suspense fallback={<Loader />}>
-      <Download />
-    </Suspense>
-    <Suspense fallback={<Loader />}>
-      <FloatingContact />
-    </Suspense>
+    <HeroSection />
+    <CarSlideshow />
+    <Places />
+    <Gallery />
+    <CarListing />
+    <Working />
+    <Services />
+    <Download />
+    <FloatingContact />
   </>
 );
+
+// App Layout Component to hide Navbar/Footer on specific routes
+import { useLocation } from 'react-router-dom';
+
+const AppLayout = () => {
+  const location = useLocation();
+  const isAdmin = location.pathname.startsWith('/admin');
+
+  return (
+    <Suspense fallback={<Loader />}>
+      {!isAdmin && <Navbar />}
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/my-bookings" element={<UserHistory />} />
+        <Route path="/about-us" element={<AboutUs />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/faqs" element={<FAQ />} />
+        <Route path="/gallery" element={<GalleryPage />} />
+      </Routes>
+      {!isAdmin && <Footer />}
+    </Suspense>
+  );
+};
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <AuthProvider>
       <BrowserRouter>
-        <Suspense fallback={<Loader />}>
-          <Navbar />
-        </Suspense>
-        <Suspense fallback={<Loader />}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/admin" element={<AdminPanel />} />
-            <Route path="/my-bookings" element={<UserHistory />} />
-            <Route path="/about-us" element={<AboutUs />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/faqs" element={<FAQ />} />
-          </Routes>
-        </Suspense>
-        <Suspense fallback={<Loader />}>
-          <Footer />
-        </Suspense>
+        <AppLayout />
       </BrowserRouter>
     </AuthProvider>
   </StrictMode>

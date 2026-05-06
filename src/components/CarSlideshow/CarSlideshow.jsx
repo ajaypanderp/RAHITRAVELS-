@@ -1,21 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../../firebaseConfig';
 import { collection, getDocs, limit, query } from 'firebase/firestore';
+import { BookingModal } from '../Booking/BookingModal';
 
 export const CarSlideshow = () => {
   const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef(null);
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [selectedCar, setSelectedCar] = useState(null);
 
   useEffect(() => {
     const fetchCars = async () => {
       try {
-        // Fetch up to 10 cars
         const q = query(collection(db, "cars"), limit(10));
         const snapshot = await getDocs(q);
         const fetchedCars = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        // Minimum 4 cars to show slideshow
-        if (fetchedCars.length >= 4) {
+        if (fetchedCars.length >= 1) {
           setCars(fetchedCars);
         }
       } catch (err) {
@@ -28,7 +29,7 @@ export const CarSlideshow = () => {
 
   useEffect(() => {
     let interval;
-    if (cars.length >= 4 && scrollRef.current) {
+    if (cars.length > 1 && scrollRef.current) {
         interval = setInterval(() => {
             if (scrollRef.current) {
                 const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
@@ -43,7 +44,12 @@ export const CarSlideshow = () => {
     return () => clearInterval(interval);
   }, [cars]);
 
-  if (loading || cars.length < 4) return null;
+  const handleViewDetails = (carName) => {
+    setSelectedCar(carName);
+    setIsBookingOpen(true);
+  };
+
+  if (loading || cars.length === 0) return null;
 
   return (
     <section style={{ padding: '40px 20px', background: '#fff' }}>
@@ -60,19 +66,32 @@ export const CarSlideshow = () => {
             paddingBottom: '20px',
             scrollBehavior: 'smooth',
             scrollbarWidth: 'none',
-            WebkitOverflowScrolling: 'touch'
+            WebkitOverflowScrolling: 'touch',
+            justifyContent: cars.length < 4 ? 'center' : 'flex-start'
         }}
       >
         {cars.map((car, index) => (
-          <div key={`${car.id}-${index}`} style={{ minWidth: '280px', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', background: 'white', flex: '0 0 auto' }}>
+          <div key={`${car.id}-${index}`} style={{ minWidth: '280px', maxWidth: '300px', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', background: 'white', flex: '0 0 auto', display: 'flex', flexDirection: 'column' }}>
             <img src={car.image || 'https://via.placeholder.com/300x200?text=No+Image'} alt={car.name} style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
-            <div style={{ padding: '15px', textAlign: 'center' }}>
+            <div style={{ padding: '15px', textAlign: 'center', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
               <h3 style={{ fontSize: '1.2rem', color: '#1e293b', marginBottom: '5px' }}>{car.name}</h3>
-              <p style={{ color: '#64748b', fontSize: '0.9rem' }}>{car.category}</p>
+              <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '15px' }}>{car.category}</p>
+              <button 
+                onClick={() => handleViewDetails(car.name)}
+                style={{ marginTop: 'auto', padding: '10px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                View Details
+              </button>
             </div>
           </div>
         ))}
       </div>
+      
+      <BookingModal 
+        isOpen={isBookingOpen} 
+        onClose={() => setIsBookingOpen(false)} 
+        preSelectedCar={selectedCar} 
+      />
     </section>
   );
 };
