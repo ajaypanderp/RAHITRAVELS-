@@ -23,7 +23,7 @@ export const Navbar = () => {
   // WhatsApp Redirect Function
   const openWhatsApp = () => {
     // Replace with your actual phone number
-    window.open("https://wa.me/91XXXXXXXXXX", "_blank"); 
+    window.open("https://wa.me/919194230030", "_blank"); 
   };
 
   const toggleNavbar = () => {
@@ -74,8 +74,8 @@ export const Navbar = () => {
       <div className="container">
         <div className="navbar-content">
           <div className="text-container" onClick={scrollToTop} style={{cursor: 'pointer'}}>
-            <h1 className="logo-text">
-              Rahi<i className="ri-map-pin-2-fill"></i>Travels
+            <h1 className="logo-text" style={{ fontSize: "1.5rem" }}>
+              Ayodhya<i className="ri-map-pin-2-fill"></i>Darshan Express
             </h1>
           </div>
           
@@ -85,7 +85,7 @@ export const Navbar = () => {
             <li><a href="/#services">Services</a></li>
             <li><a href="/#gallery">Gallery</a></li>
             <li><a href="/about-us">About Us</a></li> 
-            <li><a href="https://wa.me/919140230030" target="_blank"><i className="ri-whatsapp-line"></i> WhatsApp</a></li>
+            <li><a href="https://wa.me/919194230030" target="_blank"><i className="ri-whatsapp-line"></i> WhatsApp</a></li>
             {currentUser && <li><a href="/my-bookings">My Bookings</a></li>}
           </ul>
 
@@ -123,7 +123,7 @@ export const Navbar = () => {
                 { text: "Services", icon: "ri-shield-flash-line", href: "/#services" },
                 { text: "Gallery", icon: "ri-image-line", href: "/#gallery" },
                 { text: "About Us", icon: "ri-information-line", href: "/about-us" },
-                { text: "WhatsApp", icon: "ri-whatsapp-line", href: "https://wa.me/919140230030" },
+                { text: "WhatsApp", icon: "ri-whatsapp-line", href: "https://wa.me/919194230030" },
               ].map((item, index) => (
                 <li key={item.text} ref={(el) => (linksRef.current[index] = el)}>
                   <a 

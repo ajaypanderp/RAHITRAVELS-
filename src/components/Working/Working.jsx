@@ -59,7 +59,7 @@ export const Working = () => {
       <div className="heading">
         <h4>How It Works</h4>
         <h3>
-          Simple Steps to your <span>Perfect Ride</span>
+          Simple Steps to your <span>Perfect Journey</span>
         </h3>
       </div>
 
@@ -69,8 +69,8 @@ export const Working = () => {
             <i className="ri-map-pin-fill"></i>
           </div>
           <div className="step-text">
-            <h5>Choose a Location</h5>
-            <p>Easily select the perfect location for your car rental.</p>
+            <h5>Choose a Destination</h5>
+            <p>Easily select the perfect spiritual or cultural destination for your trip.</p>
           </div>
         </div>
 
@@ -99,8 +99,8 @@ export const Working = () => {
             <i className="ri-bookmark-3-fill"></i>
           </div>
           <div className="step-text">
-            <h5>Book your Car</h5>
-            <p>Reserve your ideal car in just a few clicks.</p>
+            <h5>Book your Travel</h5>
+            <p>Reserve your ideal travel package in just a few clicks.</p>
           </div>
         </div>
       </section>

@@ -81,18 +81,16 @@ export const HeroSection = () => {
     <main>
       <section className="text-section" ref={textRef}>
         <h1>
-          Drive your <span>Dream Car</span> Today
+          Discover India with <span>Ayodhya Darshan Express</span>
         </h1>
         <p>
-          Rent the perfect car for traveling to places like Ayodhya, Banaras, Chitrakoot, and more with Rahi Travels. Enjoy flexible
-          options, great prices, and a hassle-free experience. Get started in a
-          few clicks!
+          Experience unforgettable spiritual and cultural journeys to Ayodhya, Banaras, Chitrakoot, and beyond. We provide comprehensive travel solutions, ensuring comfort, safety, and a deeply enriching travel experience from start to finish.
         </p>
         <button 
           className="book-now-btn" 
           onClick={() => setIsBookingOpen(true)}
         >
-          Book Your Ride
+          Book Your Journey
         </button>
 
       </section>

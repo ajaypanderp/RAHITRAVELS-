@@ -21,7 +21,7 @@ export const Footer = () => {
           <ul>
             <li><a href="/#rent">Rent a Car</a></li>
             <li><a href="/#services">Services</a></li>
-            <li><a href="https://wa.me/919140230030">Contact</a></li>
+            <li><a href="https://wa.me/919194230030">Contact</a></li>
           </ul>
         </div>
 
@@ -36,8 +36,8 @@ export const Footer = () => {
         <div className="footer-column">
           <h4>Contact Us</h4>
           <ul>
-            <li><i className="ri-phone-fill"></i> +91 91402 30030</li>
-            <li><i className="ri-mail-fill"></i> rahitravels@gmail.com</li>
+            <li><i className="ri-phone-fill"></i> +91 91942 30030</li>
+            <li><i className="ri-mail-fill"></i> ayodhyadarshanexpress@gmail.com</li>
             <li><i className="ri-map-pin-fill"></i> Ayodhya, Uttar Pradesh</li>
           </ul>
         </div>
@@ -46,7 +46,7 @@ export const Footer = () => {
       <div className="footer-line"></div>
 
       <div className="footer-bottom">
-        <p>Rahi Travels &copy; {currentYear}. All rights reserved.</p>
+        <p>Ayodhya Darshan Express &copy; {currentYear}. All rights reserved.</p>
       </div>
     </footer>
   );

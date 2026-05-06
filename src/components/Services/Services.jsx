@@ -41,7 +41,7 @@ export const Services = () => {
             <div className="sicon">
               <i class="ri-wallet-3-fill"></i>
             </div>
-            <h4>Easier Rent On Your Budget</h4>
+            <h4>Complete Packages in Your Budget</h4>
           </div>
 
           <div className="feature-item">
@@ -61,7 +61,7 @@ export const Services = () => {
             <div className="sicon">
               <i class="ri-medal-fill"></i>
             </div>
-            <h4>Best Extended Auto Warranties</h4>
+            <h4>Guided Tours & Experiences</h4>
           </div>
 
           <div className="feature-item">
@@ -75,7 +75,7 @@ export const Services = () => {
             <div className="sicon">
               <i class="ri-taxi-wifi-fill"></i>
             </div>
-            <h4>Your Choice Of Mechanic</h4>
+            <h4>Comfort & Safety Guaranteed</h4>
           </div>
         </div>
       </div>

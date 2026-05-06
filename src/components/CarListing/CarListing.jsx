@@ -9,6 +9,8 @@ export const CarListing = () => {
   const [loading, setLoading] = useState(true);
   const [selectedCar, setSelectedCar] = useState(null);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+  
+  const [galleryCar, setGalleryCar] = useState(null);
 
   useEffect(() => {
     const fetchCars = async () => {
@@ -28,7 +30,7 @@ export const CarListing = () => {
     setIsBookingOpen(true);
   };
 
-  if (loading) return <div className="car-listing-loading">Finding the best cars for you...</div>;
+  if (loading) return <div className="car-listing-loading" style={{textAlign:'center', padding:'40px'}}>Finding the best cars for you...</div>;
 
   return (
     <section className="car-listing-section" id="rent">
@@ -40,9 +42,17 @@ export const CarListing = () => {
       <div className="car-grid">
         {cars.map(car => (
           <div key={car.id} className="car-item">
-            <div className="car-image-container">
+            <div className="car-image-container" style={{ position: 'relative' }}>
               <img src={car.image || 'https://via.placeholder.com/300x200?text=No+Image'} alt={car.name} />
               <div className="car-badge">{car.category}</div>
+              {car.galleryUrls && car.galleryUrls.length > 0 && (
+                <button 
+                  onClick={() => setGalleryCar(car)}
+                  style={{ position: 'absolute', bottom: '10px', right: '10px', background: 'rgba(0,0,0,0.7)', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '5px', cursor: 'pointer', fontSize: '0.8rem' }}
+                >
+                  <i className="ri-image-line"></i> View Gallery
+                </button>
+              )}
             </div>
             <div className="car-details">
               <h3>{car.name}</h3>
@@ -51,7 +61,7 @@ export const CarListing = () => {
                 <span className="price-unit">onwards</span>
               </div>
               <ul className="car-features">
-                <li><i className="ri-user-fill"></i> 5 Seats</li>
+                <li><i className="ri-user-fill"></i> {car.seats || '5'} Seats</li>
                 <li><i className="ri-gas-station-fill"></i> Petrol/CNG</li>
                 <li><i className="ri-check-line"></i> Clean & Sanitized</li>
               </ul>
@@ -74,6 +84,21 @@ export const CarListing = () => {
         onClose={() => setIsBookingOpen(false)} 
         preSelectedCar={selectedCar} 
       />
+
+      {galleryCar && (
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
+          <div className="modal-content" style={{ maxWidth: '800px', width: '90%', maxHeight: '90vh', overflowY: 'auto', padding: '20px' }}>
+            <button className="close-btn" onClick={() => setGalleryCar(null)}>&times;</button>
+            <h2>{galleryCar.name} Gallery</h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '20px' }}>
+              <img src={galleryCar.image} alt="Main" style={{ width: '100%', borderRadius: '8px', marginBottom: '10px', objectFit: 'cover', height: '300px' }} />
+              {galleryCar.galleryUrls.map((url, i) => (
+                <img key={i} src={url} alt={`Gallery ${i}`} style={{ width: 'calc(50% - 5px)', borderRadius: '8px', objectFit: 'cover', height: '150px' }} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };

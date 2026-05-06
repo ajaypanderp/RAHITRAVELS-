@@ -7,7 +7,7 @@ export const AdminPanel = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   
-  const [activeTab, setActiveTab] = useState('cars'); // 'cars', 'bookings', 'gallery', 'hero'
+  const [activeTab, setActiveTab] = useState('cars'); // 'cars', 'bookings', 'gallery', 'hero', 'users', 'places'
   
   // Cars & Categories State
   const [cars, setCars] = useState([]);
@@ -16,8 +16,15 @@ export const AdminPanel = () => {
   
   // Form State for Add/Edit Car
   const [editingCarId, setEditingCarId] = useState(null);
-  const [formData, setFormData] = useState({ name: '', price: '', category: '', imageFile: null, existingImage: '' });
+  const [formData, setFormData] = useState({ name: '', price: '', category: '', seats: '5', imageFile: null, existingImage: '', galleryUrls: ['', '', '', '', '', '', ''] });
   const [uploading, setUploading] = useState(false);
+  
+  // Users State
+  const [users, setUsers] = useState([]);
+
+  // Places State
+  const [places, setPlaces] = useState([]);
+  const [placeForm, setPlaceForm] = useState({ name: '', photoUrl: '', websiteLink: '' });
 
   // Bookings State
   const [bookings, setBookings] = useState([]);
@@ -65,6 +72,16 @@ export const AdminPanel = () => {
     setHeroImages(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
   };
 
+  const fetchUsers = async () => {
+    const querySnapshot = await getDocs(collection(db, "users"));
+    setUsers(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+  };
+
+  const fetchPlaces = async () => {
+    const querySnapshot = await getDocs(collection(db, "places"));
+    setPlaces(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+  };
+
   useEffect(() => { 
     if (isAuthenticated) {
       fetchCategories();
@@ -72,6 +89,8 @@ export const AdminPanel = () => {
       fetchBookings();
       fetchGalleryPhotos();
       fetchHeroImages();
+      fetchUsers();
+      fetchPlaces();
     }
   }, [isAuthenticated]);
 
@@ -131,6 +150,8 @@ export const AdminPanel = () => {
         name: formData.name,
         pricePerKm: formData.price,
         category: formData.category,
+        seats: formData.seats,
+        galleryUrls: formData.galleryUrls.filter(url => url.trim() !== ''),
         image: imageUrl
       };
 
@@ -142,7 +163,7 @@ export const AdminPanel = () => {
         alert("Car Added Successfully!");
       }
 
-      setFormData({ name: '', price: '', category: categories.length > 0 ? categories[0].name : '', imageFile: null, existingImage: '' });
+      setFormData({ name: '', price: '', category: categories.length > 0 ? categories[0].name : '', seats: '5', imageFile: null, existingImage: '', galleryUrls: ['', '', '', '', '', '', ''] });
       setEditingCarId(null);
       fetchCars();
     } catch(err) {
@@ -157,8 +178,10 @@ export const AdminPanel = () => {
       name: car.name,
       price: car.pricePerKm,
       category: car.category,
+      seats: car.seats || '5',
       imageFile: null,
-      existingImage: car.image
+      existingImage: car.image,
+      galleryUrls: car.galleryUrls ? [...car.galleryUrls, '', '', '', '', '', '', ''].slice(0, 7) : ['', '', '', '', '', '', '']
     });
   };
 
@@ -171,7 +194,7 @@ export const AdminPanel = () => {
 
   const cancelEdit = () => {
     setEditingCarId(null);
-    setFormData({ name: '', price: '', category: categories.length > 0 ? categories[0].name : '', imageFile: null, existingImage: '' });
+    setFormData({ name: '', price: '', category: categories.length > 0 ? categories[0].name : '', seats: '5', imageFile: null, existingImage: '', galleryUrls: ['', '', '', '', '', '', ''] });
   };
 
   // Booking Actions
@@ -250,6 +273,27 @@ export const AdminPanel = () => {
     }
   };
 
+  // Place Actions
+  const handleAddPlace = async (e) => {
+    e.preventDefault();
+    if (!placeForm.name || !placeForm.photoUrl) return;
+    try {
+      await addDoc(collection(db, "places"), placeForm);
+      alert("Place Added Successfully!");
+      setPlaceForm({ name: '', photoUrl: '', websiteLink: '' });
+      fetchPlaces();
+    } catch(err) {
+      alert("Error adding place: " + err.message);
+    }
+  };
+
+  const handleDeletePlace = async (id) => {
+    if(window.confirm("Are you sure you want to delete this place?")) {
+      await deleteDoc(doc(db, "places", id));
+      fetchPlaces();
+    }
+  };
+
   return (
     <div className="admin-dashboard">
       <div className="admin-header">
@@ -259,6 +303,8 @@ export const AdminPanel = () => {
           <button className={activeTab === 'bookings' ? 'active-tab' : ''} onClick={() => setActiveTab('bookings')}>User Bookings</button>
           <button className={activeTab === 'gallery' ? 'active-tab' : ''} onClick={() => setActiveTab('gallery')}>Gallery Manager</button>
           <button className={activeTab === 'hero' ? 'active-tab' : ''} onClick={() => setActiveTab('hero')}>Hero Manager</button>
+          <button className={activeTab === 'users' ? 'active-tab' : ''} onClick={() => setActiveTab('users')}>Users</button>
+          <button className={activeTab === 'places' ? 'active-tab' : ''} onClick={() => setActiveTab('places')}>Places</button>
         </div>
       </div>
 
@@ -290,6 +336,12 @@ export const AdminPanel = () => {
                   <option value="" disabled>Select Category</option>
                   {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
                 </select>
+                <select value={formData.seats} onChange={(e) => setFormData({...formData, seats: e.target.value})} required>
+                  <option value="5">5 Seats</option>
+                  <option value="7">7 Seats</option>
+                  <option value="8">8 Seats</option>
+                  <option value="12">12 Seats</option>
+                </select>
                 {formData.existingImage && (
                   <div className="current-image-preview">
                     <img src={formData.existingImage} alt="Current" />
@@ -298,7 +350,23 @@ export const AdminPanel = () => {
                 )}
                 <input type="file" onChange={(e) => setFormData({...formData, imageFile: e.target.files[0]})} required={!editingCarId} />
                 
-                <div className="form-actions">
+                <h4 style={{marginTop: '15px'}}>Car Gallery URLs (Max 7)</h4>
+                {formData.galleryUrls.map((url, i) => (
+                  <input 
+                    key={i} 
+                    type="text" 
+                    placeholder={`Gallery Image URL ${i + 1}`} 
+                    value={url} 
+                    onChange={(e) => {
+                      const newUrls = [...formData.galleryUrls];
+                      newUrls[i] = e.target.value;
+                      setFormData({...formData, galleryUrls: newUrls});
+                    }} 
+                    style={{ marginBottom: '5px' }}
+                  />
+                ))}
+                
+                <div className="form-actions" style={{marginTop: '15px'}}>
                   <button type="submit" disabled={uploading} className="primary-btn">
                     {uploading ? 'Saving...' : (editingCarId ? 'Update Car' : 'Publish Car')}
                   </button>
@@ -315,7 +383,7 @@ export const AdminPanel = () => {
                 <div key={car.id} className="car-card">
                   <img src={car.image} alt={car.name} />
                   <div className="car-info">
-                    <h4>{car.name}</h4>
+                    <h4>{car.name} ({car.seats || '5'} Seater)</h4>
                     <span className="car-badge">{car.category}</span>
                     <p>{car.pricePerKm}</p>
                     <div className="car-actions">
@@ -423,6 +491,70 @@ export const AdminPanel = () => {
                     Remove BG
                   </label>
                   <button onClick={() => handleDeleteHeroImage(img.id)} className="delete-btn" style={{ width: '100%' }}>Delete</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'users' && (
+        <div className="admin-content full-width">
+          <h3>Registered Users</h3>
+          <div className="table-responsive">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>Email</th>
+                  <th>Joined Date</th>
+                  <th>Bookings</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.length === 0 && (
+                  <tr><td colSpan="5" className="text-center">No users found</td></tr>
+                )}
+                {users.map(u => {
+                  const userBookings = bookings.filter(b => b.email === u.email || b.mobile === u.phone);
+                  return (
+                    <tr key={u.id}>
+                      <td>{u.name}</td>
+                      <td>{u.phone}</td>
+                      <td>{u.email}</td>
+                      <td>{u.createdAt ? new Date(u.createdAt.toMillis()).toLocaleDateString() : 'N/A'}</td>
+                      <td>{userBookings.length} bookings</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'places' && (
+        <div className="admin-content full-width">
+          <div className="card" style={{ marginBottom: '20px', maxWidth: '500px' }}>
+            <h3>Add Place / Service Location</h3>
+            <form onSubmit={handleAddPlace} className="admin-form">
+              <input type="text" placeholder="Place Name" required value={placeForm.name} onChange={(e) => setPlaceForm({...placeForm, name: e.target.value})} />
+              <input type="url" placeholder="Photo URL (Direct Link)" required value={placeForm.photoUrl} onChange={(e) => setPlaceForm({...placeForm, photoUrl: e.target.value})} />
+              <input type="url" placeholder="Website Link (Optional)" value={placeForm.websiteLink} onChange={(e) => setPlaceForm({...placeForm, websiteLink: e.target.value})} />
+              <button type="submit" className="primary-btn">Add Place</button>
+            </form>
+          </div>
+          
+          <h3>Service Places</h3>
+          <div className="car-grid">
+            {places.map(p => (
+              <div key={p.id} className="car-card">
+                <img src={p.photoUrl} alt={p.name} />
+                <div className="car-info">
+                  <h4>{p.name}</h4>
+                  {p.websiteLink && <a href={p.websiteLink} target="_blank" rel="noopener noreferrer" style={{ display: 'block', marginBottom: '10px', color: '#2563eb' }}>Visit Site</a>}
+                  <button onClick={() => handleDeletePlace(p.id)} className="delete-btn" style={{ width: '100%' }}>Delete</button>
                 </div>
               </div>
             ))}
