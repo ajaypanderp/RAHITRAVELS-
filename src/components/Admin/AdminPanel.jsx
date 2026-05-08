@@ -632,6 +632,9 @@ export const AdminPanel = () => {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
       {activeTab === 'analytics' && (
         <div className="admin-content full-width">
           <h3>Visitor Analytics</h3>
