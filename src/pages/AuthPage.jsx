@@ -31,6 +31,22 @@ export const AuthPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Helper to parse Firebase errors nicely
+  const parseError = (err) => {
+    let msg = err.message || "An error occurred.";
+    if (msg.includes('billing-not-enabled')) {
+      return "Phone authentication requires a linked billing account in Firebase.";
+    }
+    if (msg.startsWith('Firebase: ')) {
+      msg = msg.replace('Firebase: ', '');
+    }
+    msg = msg.replace(/\(auth\/.*\)\.?/, '').trim();
+    if (msg.startsWith('Error ')) {
+      msg = msg.replace('Error ', '');
+    }
+    return msg || "Authentication failed.";
+  };
+
   // Handle Initial Email/Phone Submit
   const handleInitialSubmit = async (e) => {
     e.preventDefault();
@@ -58,7 +74,7 @@ export const AuthPage = () => {
     } else {
       // Phone Auth
       if (!phone || phone.length < 10) {
-        setError('Please enter a valid phone number with country code (e.g. +91...)');
+        setError('Please enter a valid phone number.');
         setLoading(false);
         return;
       }
@@ -68,7 +84,7 @@ export const AuthPage = () => {
         setConfirmationResult(confirmation);
         setStep(4); // Move to OTP
       } catch (err) {
-        setError(err.message || 'Failed to send OTP.');
+        setError(parseError(err));
         // Reset recaptcha on error
         if (window.recaptchaVerifier) {
           window.recaptchaVerifier.clear();
@@ -92,7 +108,7 @@ export const AuthPage = () => {
         // If user actually doesn't exist (due to email enum protection), switch to signup
         setError('Invalid credentials, or account not found.');
       } else {
-        setError(err.message);
+        setError(parseError(err));
       }
     }
     setLoading(false);
@@ -114,7 +130,7 @@ export const AuthPage = () => {
       });
       navigate('/');
     } catch (err) {
-      setError(err.message);
+      setError(parseError(err));
     }
     setLoading(false);
   };
@@ -142,7 +158,7 @@ export const AuthPage = () => {
       }
       navigate('/');
     } catch (err) {
-      setError('Invalid OTP code.');
+      setError(parseError(err));
     }
     setLoading(false);
   };
@@ -165,7 +181,7 @@ export const AuthPage = () => {
       }
       navigate('/');
     } catch (err) {
-      setError(err.message);
+      setError(parseError(err));
     }
   };
 
@@ -227,12 +243,6 @@ export const AuthPage = () => {
               <button type="submit" className="auth-submit-btn" disabled={loading}>
                 {loading ? 'Checking...' : 'Continue'}
               </button>
-
-              <div className="auth-method-toggle">
-                <span onClick={() => setAuthMethod(authMethod === 'email' ? 'phone' : 'email')}>
-                  {authMethod === 'email' ? 'Use Phone Number instead' : 'Use Email instead'}
-                </span>
-              </div>
             </form>
           )}
 
@@ -333,9 +343,18 @@ export const AuthPage = () => {
               </div>
               
               <div className="social-auth-buttons">
-                <button type="button" onClick={handleGoogleAuth} className="social-btn">
+                <button type="button" onClick={handleGoogleAuth} className="social-btn" title="Google">
                   <FcGoogle size={24} />
                 </button>
+                {authMethod === 'email' ? (
+                  <button type="button" onClick={() => setAuthMethod('phone')} className="social-btn" title="Phone">
+                    <FaPhoneAlt size={20} color="#2563eb" />
+                  </button>
+                ) : (
+                  <button type="button" onClick={() => setAuthMethod('email')} className="social-btn" title="Email">
+                    <MdEmail size={24} color="#ef4444" />
+                  </button>
+                )}
               </div>
             </>
           )}
