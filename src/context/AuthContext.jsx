@@ -4,7 +4,12 @@ import {
   onAuthStateChanged, 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
-  signOut 
+  signOut,
+  GoogleAuthProvider,
+  signInWithPopup,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  fetchSignInMethodsForEmail
 } from 'firebase/auth';
 
 const AuthContext = createContext();
@@ -30,6 +35,39 @@ export const AuthProvider = ({ children }) => {
     return signOut(auth);
   };
 
+  // Check if user exists
+  const checkUserExists = async (email) => {
+    try {
+      const methods = await fetchSignInMethodsForEmail(auth, email);
+      return methods.length > 0;
+    } catch (error) {
+      return false;
+    }
+  };
+
+  // Google Sign In
+  const loginWithGoogle = () => {
+    const provider = new GoogleAuthProvider();
+    return signInWithPopup(auth, provider);
+  };
+
+  // Phone Auth Setup Recaptcha
+  const setupRecaptcha = (containerId) => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
+        size: 'invisible',
+        callback: (response) => {
+          // reCAPTCHA solved, allow signInWithPhoneNumber.
+        }
+      });
+    }
+    return window.recaptchaVerifier;
+  };
+
+  const loginWithPhone = (phoneNumber, appVerifier) => {
+    return signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, user => {
       setCurrentUser(user);
@@ -42,7 +80,11 @@ export const AuthProvider = ({ children }) => {
     currentUser,
     signup,
     login,
-    logout
+    logout,
+    checkUserExists,
+    loginWithGoogle,
+    setupRecaptcha,
+    loginWithPhone
   };
 
   return (

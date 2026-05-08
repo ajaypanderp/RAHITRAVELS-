@@ -30,6 +30,7 @@ const AboutUs = lazy(() => import('./pages/AboutUs').then(module => ({ default: 
 const Terms = lazy(() => import('./pages/Terms').then(module => ({ default: module.Terms })));
 const FAQ = lazy(() => import('./pages/FAQ').then(module => ({ default: module.FAQ })));
 const GalleryPage = lazy(() => import('./pages/GalleryPage').then(module => ({ default: module.GalleryPage })));
+const AuthPage = lazy(() => import('./pages/AuthPage').then(module => ({ default: module.AuthPage })));
 
 // The Main Website View (Home)
 const Home = () => (
@@ -52,10 +53,12 @@ import { useLocation } from 'react-router-dom';
 const AppLayout = () => {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
+  const isAuth = location.pathname.startsWith('/auth');
+  const hideNavFooter = isAdmin || isAuth;
 
   return (
     <Suspense fallback={<Loader />}>
-      {!isAdmin && <Navbar />}
+      {!hideNavFooter && <Navbar />}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/admin" element={<AdminPanel />} />
@@ -64,8 +67,9 @@ const AppLayout = () => {
         <Route path="/terms" element={<Terms />} />
         <Route path="/faqs" element={<FAQ />} />
         <Route path="/gallery" element={<GalleryPage />} />
+        <Route path="/auth" element={<AuthPage />} />
       </Routes>
-      {!isAdmin && <Footer />}
+      {!hideNavFooter && <Footer />}
     </Suspense>
   );
 };

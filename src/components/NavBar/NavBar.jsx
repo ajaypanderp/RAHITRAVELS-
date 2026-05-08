@@ -2,7 +2,7 @@ import "remixicon/fonts/remixicon.css";
 import { useState, useRef, useEffect } from "react";
 import { gsap } from "gsap";
 import { useAuth } from "../../context/AuthContext";
-import { LoginSignupModal } from "../Auth/LoginSignupModal";
+import { useNavigate } from "react-router-dom";
 import "./NavBar.css";
 
 export const Navbar = () => {
@@ -12,7 +12,7 @@ export const Navbar = () => {
   const animationRef = useRef(null);
   
   const { currentUser, logout } = useAuth();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   // Function to handle smooth scroll to top
   const scrollToTop = () => {
@@ -97,8 +97,8 @@ export const Navbar = () => {
               </>
             ) : (
               <>
-                <a href="#" className="btn btn-border" onClick={() => setIsModalOpen(true)}>Sign In</a>
-                <a href="#" className="btn btn-gradient" onClick={() => setIsModalOpen(true)}>Create Account</a>
+                <a href="#" className="btn btn-border" onClick={(e) => { e.preventDefault(); navigate('/auth'); }}>Sign In</a>
+                <a href="#" className="btn btn-gradient" onClick={(e) => { e.preventDefault(); navigate('/auth'); }}>Create Account</a>
               </>
             )}
           </div>
@@ -143,7 +143,6 @@ export const Navbar = () => {
           </div>
         )}
       </div>
-      <LoginSignupModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </nav>
   );
 };
