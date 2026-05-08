@@ -10,7 +10,7 @@ export const BookingForm = ({ preSelectedCar, onClose }) => {
   const [formData, setFormData] = useState({
     name: '',
     mobile: '',
-    email: currentUser ? currentUser.email : '',
+    email: currentUser ? (currentUser.email || '') : '',
     from: '',
     to: '',
     date: '',
@@ -67,7 +67,7 @@ export const BookingForm = ({ preSelectedCar, onClose }) => {
       await addDoc(collection(db, 'bookings'), {
         ...formData,
         userId: currentUser.uid,
-        userEmail: currentUser.email,
+        userEmail: currentUser.email || '',
         createdAt: serverTimestamp(),
       });
       setSuccess(true);

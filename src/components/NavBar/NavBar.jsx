@@ -92,7 +92,9 @@ export const Navbar = () => {
           <div className="auth-buttons">
             {currentUser ? (
               <>
-                <span style={{ marginRight: '15px', color: 'gray' }}>Hi, {currentUser.email.split('@')[0]}</span>
+                <span style={{ marginRight: '15px', color: 'gray' }}>
+                  Hi, {currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : currentUser.phoneNumber)}
+                </span>
                 <a href="#" className="btn btn-border" onClick={logout}>Logout</a>
               </>
             ) : (

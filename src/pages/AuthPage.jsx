@@ -8,7 +8,7 @@ import './AuthPage.css';
 
 // Icons
 import { FcGoogle } from 'react-icons/fc';
-import { FaApple, FaFacebook, FaPhoneAlt } from 'react-icons/fa';
+import { FaPhoneAlt } from 'react-icons/fa';
 import { FiEye, FiEyeOff, FiArrowRight } from 'react-icons/fi';
 import { MdEmail } from 'react-icons/md';
 
@@ -17,7 +17,7 @@ export const AuthPage = () => {
   const [authMethod, setAuthMethod] = useState('email'); // 'email' or 'phone'
   
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState('+91');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [otp, setOtp] = useState('');
@@ -335,12 +335,6 @@ export const AuthPage = () => {
               <div className="social-auth-buttons">
                 <button type="button" onClick={handleGoogleAuth} className="social-btn">
                   <FcGoogle size={24} />
-                </button>
-                <button type="button" className="social-btn">
-                  <FaFacebook size={24} color="#1877F2" />
-                </button>
-                <button type="button" className="social-btn">
-                  <FaApple size={24} color="#000" />
                 </button>
               </div>
             </>
