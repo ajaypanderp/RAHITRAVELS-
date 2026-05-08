@@ -72,6 +72,13 @@ export const AuthProvider = ({ children }) => {
     const unsubscribe = onAuthStateChanged(auth, user => {
       setCurrentUser(user);
       setLoading(false);
+      
+      // Request Notification Permission on Login/Account Creation
+      if (user && 'Notification' in window) {
+        if (Notification.permission === 'default') {
+          Notification.requestPermission();
+        }
+      }
     });
     return unsubscribe;
   }, []);

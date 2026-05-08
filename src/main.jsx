@@ -1,7 +1,10 @@
 import React, { StrictMode, Suspense, lazy, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { PwaInstallPopup } from './components/PwaInstallPopup'
+import { NotificationChecker } from './components/NotificationChecker'
 import './index.css'
+import 'remixicon/fonts/remixicon.css'
 import { db } from './firebaseConfig'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 
@@ -94,6 +97,8 @@ const AppLayout = () => {
         <Route path="/profile" element={<ProfilePage />} />
       </Routes>
       {!hideNavFooter && <Footer />}
+      <PwaInstallPopup />
+      <NotificationChecker />
     </Suspense>
   );
 };

@@ -81,12 +81,52 @@ export const BookingForm = ({ preSelectedCar, onClose }) => {
     setLoading(false);
   };
 
+  const downloadICS = () => {
+    const dateStr = formData.date.replace(/-/g, '');
+    const timeStr = formData.time.replace(/:/g, '') + '00';
+    const startDateTime = `${dateStr}T${timeStr}`;
+
+    const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Ayodhya Darshan Express//Booking//EN
+BEGIN:VEVENT
+SUMMARY:Trip: ${formData.from} to ${formData.to}
+DTSTART;TZID=Asia/Kolkata:${startDateTime}
+DESCRIPTION:Car: ${formData.car}\\nPickup: ${formData.from}\\nDrop: ${formData.to}
+BEGIN:VALARM
+TRIGGER:-PT3H
+ACTION:DISPLAY
+DESCRIPTION:Reminder: Your cab is arriving in 3 hours!
+END:VALARM
+END:VEVENT
+END:VCALENDAR`;
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.setAttribute('download', 'ayodhya-darshan-trip.ics');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (success) {
     return (
       <div className="booking-success">
         <i className="ri-checkbox-circle-fill"></i>
         <h3>Booking Request Sent!</h3>
         <p>We have received your request for <strong>{formData.car}</strong>. Our team will contact you shortly at <strong>{formData.mobile}</strong> to confirm the details.</p>
+        
+        <div style={{ marginTop: '20px', padding: '15px', background: '#eff6ff', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
+          <h4 style={{ color: '#1e40af', marginBottom: '10px', fontSize: '1.1rem' }}><i className="ri-alarm-warning-line"></i> Never Miss Your Trip</h4>
+          <p style={{ color: '#3b82f6', fontSize: '0.9rem', marginBottom: '15px' }}>Add this trip to your phone's calendar to get a guaranteed notification <strong>exactly 3 hours before</strong> pickup.</p>
+          <button 
+            onClick={downloadICS}
+            style={{ background: '#2563eb', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', margin: '0 auto' }}
+          >
+            <i className="ri-calendar-event-line"></i> Add to Calendar
+          </button>
+        </div>
       </div>
     );
   }
