@@ -1,7 +1,9 @@
-import React, { StrictMode, Suspense, lazy } from 'react'
+import React, { StrictMode, Suspense, lazy, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import './index.css'
+import { db } from './firebaseConfig'
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 
 // Auth Context & Loader
 import { AuthProvider } from './context/AuthContext'
@@ -31,6 +33,7 @@ const Terms = lazy(() => import('./pages/Terms').then(module => ({ default: modu
 const FAQ = lazy(() => import('./pages/FAQ').then(module => ({ default: module.FAQ })));
 const GalleryPage = lazy(() => import('./pages/GalleryPage').then(module => ({ default: module.GalleryPage })));
 const AuthPage = lazy(() => import('./pages/AuthPage').then(module => ({ default: module.AuthPage })));
+const ProfilePage = lazy(() => import('./pages/ProfilePage').then(module => ({ default: module.ProfilePage })));
 
 // The Main Website View (Home)
 const Home = () => (
@@ -48,13 +51,33 @@ const Home = () => (
 );
 
 // App Layout Component to hide Navbar/Footer on specific routes
-import { useLocation } from 'react-router-dom';
-
 const AppLayout = () => {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
   const isAuth = location.pathname.startsWith('/auth');
   const hideNavFooter = isAdmin || isAuth;
+
+  useEffect(() => {
+    // Record visitor
+    const recordVisit = async () => {
+      const today = new Date().toDateString();
+      const visited = sessionStorage.getItem('visited_today');
+      
+      if (visited !== today) {
+        try {
+          await addDoc(collection(db, 'visitors'), {
+            timestamp: serverTimestamp(),
+            userAgent: navigator.userAgent,
+            dateString: today
+          });
+          sessionStorage.setItem('visited_today', today);
+        } catch (error) {
+          console.error("Failed to record visit", error);
+        }
+      }
+    };
+    recordVisit();
+  }, []);
 
   return (
     <Suspense fallback={<Loader />}>
@@ -68,6 +91,7 @@ const AppLayout = () => {
         <Route path="/faqs" element={<FAQ />} />
         <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/auth" element={<AuthPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
       </Routes>
       {!hideNavFooter && <Footer />}
     </Suspense>

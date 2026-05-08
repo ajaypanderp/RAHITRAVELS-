@@ -122,10 +122,19 @@ export const BookingForm = ({ preSelectedCar, onClose }) => {
             <h2>{selectedCarDetails.name}</h2>
             <div className="price">{selectedCarDetails.pricePerKm}</div>
             <ul className="features">
-              <li><i className="ri-user-smile-line"></i> Professional Driver Included</li>
-              <li><i className="ri-shield-check-line"></i> Fully Insured Vehicle</li>
-              <li><i className="ri-map-pin-user-line"></i> Doorstep Pickup & Drop</li>
-              <li><i className="ri-customer-service-2-line"></i> 24/7 Support</li>
+              <li><i className="ri-group-line"></i> {selectedCarDetails.seats || '5'} Seater</li>
+              <li><i className="ri-gas-station-line"></i> {selectedCarDetails.fuelType || 'Petrol'}</li>
+              {selectedCarDetails.features && selectedCarDetails.features.map((feature, i) => (
+                <li key={i}><i className="ri-check-line"></i> {feature}</li>
+              ))}
+              {(!selectedCarDetails.features || selectedCarDetails.features.length === 0) && (
+                <>
+                  <li><i className="ri-user-smile-line"></i> Professional Driver Included</li>
+                  <li><i className="ri-shield-check-line"></i> Fully Insured Vehicle</li>
+                  <li><i className="ri-map-pin-user-line"></i> Doorstep Pickup & Drop</li>
+                  <li><i className="ri-customer-service-2-line"></i> 24/7 Support</li>
+                </>
+              )}
             </ul>
           </>
         ) : (

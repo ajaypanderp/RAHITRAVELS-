@@ -95,7 +95,8 @@ export const Navbar = () => {
                 <span style={{ marginRight: '15px', color: 'gray' }}>
                   Hi, {currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : currentUser.phoneNumber)}
                 </span>
-                <a href="#" className="btn btn-border" onClick={logout}>Logout</a>
+                <a href="/profile" className="btn btn-border" style={{ marginRight: '10px' }}>Profile</a>
+                <a href="#" className="btn btn-gradient" onClick={logout}>Logout</a>
               </>
             ) : (
               <>
@@ -126,6 +127,13 @@ export const Navbar = () => {
                 { text: "Gallery", icon: "ri-image-line", href: "/gallery" },
                 { text: "About Us", icon: "ri-information-line", href: "/about-us" },
                 { text: "WhatsApp", icon: "ri-whatsapp-line", href: "https://wa.me/919194230030" },
+                ...(currentUser ? [
+                  { text: "My Bookings", icon: "ri-calendar-check-line", href: "/my-bookings" },
+                  { text: "Profile", icon: "ri-user-line", href: "/profile" },
+                  { text: "Logout", icon: "ri-logout-box-line", action: logout },
+                ] : [
+                  { text: "Login / Signup", icon: "ri-login-box-line", href: "/auth" }
+                ])
               ].map((item, index) => (
                 <li key={item.text} ref={(el) => (linksRef.current[index] = el)}>
                   <a 

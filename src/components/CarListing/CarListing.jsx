@@ -62,8 +62,14 @@ export const CarListing = () => {
               </div>
               <ul className="car-features">
                 <li><i className="ri-user-fill"></i> {car.seats || '5'} Seats</li>
-                <li><i className="ri-gas-station-fill"></i> Petrol/CNG</li>
-                <li><i className="ri-check-line"></i> Clean & Sanitized</li>
+                <li><i className="ri-gas-station-fill"></i> {car.fuelType || 'Petrol/CNG'}</li>
+                {car.features && car.features.length > 0 ? (
+                  car.features.slice(0, 2).map((feat, i) => (
+                    <li key={i}><i className="ri-check-line"></i> {feat}</li>
+                  ))
+                ) : (
+                  <li><i className="ri-check-line"></i> Clean & Sanitized</li>
+                )}
               </ul>
               <button className="book-btn-primary" onClick={() => handleBookNow(car)}>
                 Book Now

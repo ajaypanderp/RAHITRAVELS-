@@ -16,7 +16,7 @@ export const AdminPanel = () => {
   
   // Form State for Add/Edit Car
   const [editingCarId, setEditingCarId] = useState(null);
-  const [formData, setFormData] = useState({ name: '', price: '', category: '', seats: '5', imageFile: null, existingImage: '', galleryUrls: ['', '', '', '', '', '', ''], galleryFiles: [null, null, null, null, null, null, null] });
+  const [formData, setFormData] = useState({ name: '', price: '', category: '', seats: '5', fuelType: 'Petrol', features: '', imageFile: null, existingImage: '', galleryUrls: ['', '', '', '', '', '', ''], galleryFiles: [null, null, null, null, null, null, null] });
   const [uploading, setUploading] = useState(false);
   
   // Users State
@@ -25,6 +25,10 @@ export const AdminPanel = () => {
   // Places State
   const [places, setPlaces] = useState([]);
   const [placeForm, setPlaceForm] = useState({ name: '', photoUrl: '' });
+
+  // Visitors State
+  const [visitors, setVisitors] = useState([]);
+  const [visitorStats, setVisitorStats] = useState({ today: 0, yesterday: 0, week: 0, month: 0, year: 0, lifetime: 0 });
 
   // Bookings State
   const [bookings, setBookings] = useState([]);
@@ -82,6 +86,41 @@ export const AdminPanel = () => {
     setPlaces(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
   };
 
+  const fetchVisitors = async () => {
+    const querySnapshot = await getDocs(collection(db, "visitors"));
+    const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setVisitors(data);
+
+    // Calculate Stats
+    const now = new Date();
+    const todayStr = now.toDateString();
+    
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toDateString();
+
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const firstDayOfYear = new Date(now.getFullYear(), 0, 1);
+
+    let stats = { today: 0, yesterday: 0, week: 0, month: 0, year: 0, lifetime: data.length };
+
+    data.forEach(v => {
+      if (!v.timestamp) return;
+      const vDate = new Date(v.timestamp.toMillis());
+      
+      if (v.dateString === todayStr) stats.today++;
+      if (v.dateString === yesterdayStr) stats.yesterday++;
+      if (vDate >= sevenDaysAgo) stats.week++;
+      if (vDate >= firstDayOfMonth) stats.month++;
+      if (vDate >= firstDayOfYear) stats.year++;
+    });
+
+    setVisitorStats(stats);
+  };
+
   useEffect(() => { 
     if (isAuthenticated) {
       fetchCategories();
@@ -91,6 +130,7 @@ export const AdminPanel = () => {
       fetchHeroImages();
       fetchUsers();
       fetchPlaces();
+      fetchVisitors();
     }
   }, [isAuthenticated]);
 
@@ -161,6 +201,8 @@ export const AdminPanel = () => {
         pricePerKm: formData.price,
         category: formData.category,
         seats: formData.seats,
+        fuelType: formData.fuelType,
+        features: formData.features.split(',').map(f => f.trim()).filter(f => f !== ''),
         galleryUrls: finalGalleryUrls,
         image: imageUrl
       };
@@ -173,7 +215,7 @@ export const AdminPanel = () => {
         alert("Car Added Successfully!");
       }
 
-      setFormData({ name: '', price: '', category: categories.length > 0 ? categories[0].name : '', seats: '5', imageFile: null, existingImage: '', galleryUrls: ['', '', '', '', '', '', ''], galleryFiles: [null, null, null, null, null, null, null] });
+      setFormData({ name: '', price: '', category: categories.length > 0 ? categories[0].name : '', seats: '5', fuelType: 'Petrol', features: '', imageFile: null, existingImage: '', galleryUrls: ['', '', '', '', '', '', ''], galleryFiles: [null, null, null, null, null, null, null] });
       setEditingCarId(null);
       fetchCars();
     } catch(err) {
@@ -189,6 +231,8 @@ export const AdminPanel = () => {
       price: car.pricePerKm,
       category: car.category,
       seats: car.seats || '5',
+      fuelType: car.fuelType || 'Petrol',
+      features: car.features ? car.features.join(', ') : '',
       imageFile: null,
       existingImage: car.image,
       galleryUrls: car.galleryUrls ? [...car.galleryUrls, '', '', '', '', '', '', ''].slice(0, 7) : ['', '', '', '', '', '', ''],
@@ -205,7 +249,7 @@ export const AdminPanel = () => {
 
   const cancelEdit = () => {
     setEditingCarId(null);
-    setFormData({ name: '', price: '', category: categories.length > 0 ? categories[0].name : '', seats: '5', imageFile: null, existingImage: '', galleryUrls: ['', '', '', '', '', '', ''], galleryFiles: [null, null, null, null, null, null, null] });
+    setFormData({ name: '', price: '', category: categories.length > 0 ? categories[0].name : '', seats: '5', fuelType: 'Petrol', features: '', imageFile: null, existingImage: '', galleryUrls: ['', '', '', '', '', '', ''], galleryFiles: [null, null, null, null, null, null, null] });
   };
 
   // Booking Actions
@@ -316,6 +360,7 @@ export const AdminPanel = () => {
           <button className={activeTab === 'hero' ? 'active-tab' : ''} onClick={() => setActiveTab('hero')}>Hero Manager</button>
           <button className={activeTab === 'users' ? 'active-tab' : ''} onClick={() => setActiveTab('users')}>Users</button>
           <button className={activeTab === 'places' ? 'active-tab' : ''} onClick={() => setActiveTab('places')}>Places</button>
+          <button className={activeTab === 'analytics' ? 'active-tab' : ''} onClick={() => setActiveTab('analytics')}>Analytics</button>
         </div>
       </div>
 
@@ -353,6 +398,19 @@ export const AdminPanel = () => {
                   <option value="8">8 Seats</option>
                   <option value="12">12 Seats</option>
                 </select>
+                <select value={formData.fuelType} onChange={(e) => setFormData({...formData, fuelType: e.target.value})} required>
+                  <option value="Petrol">Petrol</option>
+                  <option value="Diesel">Diesel</option>
+                  <option value="CNG">CNG</option>
+                  <option value="EV">EV (Electric)</option>
+                </select>
+                <textarea 
+                  placeholder="Point features (comma separated, e.g. AC, Bluetooth, Sunroof)" 
+                  value={formData.features} 
+                  onChange={(e) => setFormData({...formData, features: e.target.value})} 
+                  rows="3"
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', marginBottom: '10px' }}
+                />
                 {formData.existingImage && (
                   <div className="current-image-preview">
                     <img src={formData.existingImage} alt="Current" />
@@ -401,6 +459,7 @@ export const AdminPanel = () => {
                   <div className="car-info">
                     <h4>{car.name} ({car.seats || '5'} Seater)</h4>
                     <span className="car-badge">{car.category}</span>
+                    <span className="car-badge" style={{background: '#10b981', marginLeft: '5px'}}>{car.fuelType || 'Petrol'}</span>
                     <p>{car.pricePerKm}</p>
                     <div className="car-actions">
                       <button onClick={() => handleEditCar(car)} className="edit-btn">Edit</button>
@@ -572,6 +631,35 @@ export const AdminPanel = () => {
                 </div>
               </div>
             ))}
+          </div>
+      {activeTab === 'analytics' && (
+        <div className="admin-content full-width">
+          <h3>Visitor Analytics</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '20px', marginTop: '20px' }}>
+            <div style={{ padding: '20px', background: 'white', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', textAlign: 'center' }}>
+              <h4 style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '10px' }}>Today</h4>
+              <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#2563eb' }}>{visitorStats.today}</p>
+            </div>
+            <div style={{ padding: '20px', background: 'white', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', textAlign: 'center' }}>
+              <h4 style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '10px' }}>Yesterday</h4>
+              <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>{visitorStats.yesterday}</p>
+            </div>
+            <div style={{ padding: '20px', background: 'white', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', textAlign: 'center' }}>
+              <h4 style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '10px' }}>Last 7 Days</h4>
+              <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#f59e0b' }}>{visitorStats.week}</p>
+            </div>
+            <div style={{ padding: '20px', background: 'white', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', textAlign: 'center' }}>
+              <h4 style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '10px' }}>This Month</h4>
+              <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#8b5cf6' }}>{visitorStats.month}</p>
+            </div>
+            <div style={{ padding: '20px', background: 'white', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', textAlign: 'center' }}>
+              <h4 style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '10px' }}>This Year</h4>
+              <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#ec4899' }}>{visitorStats.year}</p>
+            </div>
+            <div style={{ padding: '20px', background: 'white', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', textAlign: 'center' }}>
+              <h4 style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '10px' }}>Lifetime</h4>
+              <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b' }}>{visitorStats.lifetime}</p>
+            </div>
           </div>
         </div>
       )}

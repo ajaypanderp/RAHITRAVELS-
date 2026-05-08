@@ -8,26 +8,20 @@ import './AuthPage.css';
 
 // Icons
 import { FcGoogle } from 'react-icons/fc';
-import { FaPhoneAlt } from 'react-icons/fa';
-import { FiEye, FiEyeOff, FiArrowRight } from 'react-icons/fi';
 import { MdEmail } from 'react-icons/md';
 
 export const AuthPage = () => {
   const [step, setStep] = useState(1); // 1: Email/Phone, 2: Login Password, 3: Signup Details, 4: OTP Verification
-  const [authMethod, setAuthMethod] = useState('email'); // 'email' or 'phone'
-  
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('+91');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [otp, setOtp] = useState('');
-  const [confirmationResult, setConfirmationResult] = useState(null);
+  const [phone, setPhone] = useState(''); // Just for signup details if needed, but email is primary
   
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login, signup, checkUserExists, loginWithGoogle, setupRecaptcha, loginWithPhone } = useAuth();
+  const { login, signup, checkUserExists, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -47,50 +41,27 @@ export const AuthPage = () => {
     return msg || "Authentication failed.";
   };
 
-  // Handle Initial Email/Phone Submit
+  // Handle Initial Email Submit
   const handleInitialSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    if (authMethod === 'email') {
-      if (!email) {
-        setError('Please enter your email.');
-        setLoading(false);
-        return;
+    if (!email) {
+      setError('Please enter your email.');
+      setLoading(false);
+      return;
+    }
+    try {
+      const exists = await checkUserExists(email);
+      if (exists) {
+        setStep(2); // Move to login password
+      } else {
+        setStep(3); // Move to signup details
       }
-      try {
-        const exists = await checkUserExists(email);
-        if (exists) {
-          setStep(2); // Move to login password
-        } else {
-          setStep(3); // Move to signup details
-        }
-      } catch (err) {
-        // If email enumeration is disabled, fetchSignInMethods might fail. 
-        // We can just go to password step, and if it fails, fallback to signup.
-        setStep(2); 
-      }
-    } else {
-      // Phone Auth
-      if (!phone || phone.length < 10) {
-        setError('Please enter a valid phone number.');
-        setLoading(false);
-        return;
-      }
-      try {
-        const appVerifier = setupRecaptcha('recaptcha-container');
-        const confirmation = await loginWithPhone(phone, appVerifier);
-        setConfirmationResult(confirmation);
-        setStep(4); // Move to OTP
-      } catch (err) {
-        setError(parseError(err));
-        // Reset recaptcha on error
-        if (window.recaptchaVerifier) {
-          window.recaptchaVerifier.clear();
-          window.recaptchaVerifier = null;
-        }
-      }
+    } catch (err) {
+      // If email enumeration is disabled
+      setStep(2); 
     }
     setLoading(false);
   };
@@ -135,33 +106,7 @@ export const AuthPage = () => {
     setLoading(false);
   };
 
-  // Handle OTP Verification
-  const handleOtpSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const result = await confirmationResult.confirm(otp);
-      const user = result.user;
-      
-      // Check if user exists in db
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (!userDoc.exists()) {
-        // If not, we might want to ask for name, but for simplicity we save what we have
-        await setDoc(doc(db, "users", user.uid), {
-          uid: user.uid,
-          name: name || "User",
-          phone: user.phoneNumber,
-          email: email || "",
-          createdAt: serverTimestamp()
-        });
-      }
-      navigate('/');
-    } catch (err) {
-      setError(parseError(err));
-    }
-    setLoading(false);
-  };
+
 
   // Handle Google Auth
   const handleGoogleAuth = async () => {
@@ -197,16 +142,14 @@ export const AuthPage = () => {
           </div>
 
           <h2>
-            {step === 1 && (authMethod === 'email' ? 'Sign in with email' : 'Sign in with phone')}
+            {step === 1 && 'Sign in with email'}
             {step === 2 && 'Welcome Back'}
             {step === 3 && 'Create Account'}
-            {step === 4 && 'Verify Phone'}
           </h2>
           <p className="auth-subtitle">
             {step === 1 && 'Book and manage your travels effortlessly with Ayodhya Darshan Express.'}
             {step === 2 && 'Enter your password to continue.'}
             {step === 3 && 'Just a few more details to get you started.'}
-            {step === 4 && 'Enter the OTP sent to your phone.'}
           </p>
 
           {error && <div className="auth-error">{error}</div>}
@@ -214,31 +157,16 @@ export const AuthPage = () => {
           {/* STEP 1: INITIAL INPUT */}
           {step === 1 && (
             <form onSubmit={handleInitialSubmit} className="auth-form">
-              {authMethod === 'email' ? (
-                <div className="input-group">
-                  <MdEmail className="input-icon" />
-                  <input 
-                    type="email" 
-                    placeholder="Email" 
-                    value={email} 
-                    onChange={(e) => setEmail(e.target.value)} 
-                    required 
-                  />
-                </div>
-              ) : (
-                <div className="input-group">
-                  <FaPhoneAlt className="input-icon" />
-                  <input 
-                    type="tel" 
-                    placeholder="Phone (e.g. +91...)" 
-                    value={phone} 
-                    onChange={(e) => setPhone(e.target.value)} 
-                    required 
-                  />
-                </div>
-              )}
-              
-              <div id="recaptcha-container"></div>
+              <div className="input-group">
+                <MdEmail className="input-icon" />
+                <input 
+                  type="email" 
+                  placeholder="Email" 
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)} 
+                  required 
+                />
+              </div>
 
               <button type="submit" className="auth-submit-btn" disabled={loading}>
                 {loading ? 'Checking...' : 'Continue'}
@@ -292,6 +220,16 @@ export const AuthPage = () => {
                 />
               </div>
               <div className="input-group">
+                <input 
+                  type="tel" 
+                  placeholder="Phone Number (e.g. +91...)" 
+                  value={phone} 
+                  onChange={(e) => setPhone(e.target.value)} 
+                  required 
+                  style={{ paddingLeft: '15px' }}
+                />
+              </div>
+              <div className="input-group">
                 <FiEyeOff className="input-icon" />
                 <input 
                   type={showPassword ? "text" : "password"} 
@@ -313,27 +251,7 @@ export const AuthPage = () => {
             </form>
           )}
 
-          {/* STEP 4: OTP */}
-          {step === 4 && (
-            <form onSubmit={handleOtpSubmit} className="auth-form">
-              <div className="input-group">
-                <input 
-                  type="text" 
-                  placeholder="Enter 6-digit OTP" 
-                  value={otp} 
-                  onChange={(e) => setOtp(e.target.value)} 
-                  required 
-                  style={{ paddingLeft: '15px', letterSpacing: '2px' }}
-                />
-              </div>
-              <button type="submit" className="auth-submit-btn" disabled={loading}>
-                {loading ? 'Verifying...' : 'Verify OTP'}
-              </button>
-              <div className="auth-method-toggle">
-                <span onClick={() => setStep(1)}>Back</span>
-              </div>
-            </form>
-          )}
+
 
           {/* SOCIAL LOGIN */}
           {step === 1 && (
@@ -346,15 +264,6 @@ export const AuthPage = () => {
                 <button type="button" onClick={handleGoogleAuth} className="social-btn" title="Google">
                   <FcGoogle size={24} />
                 </button>
-                {authMethod === 'email' ? (
-                  <button type="button" onClick={() => setAuthMethod('phone')} className="social-btn" title="Phone">
-                    <FaPhoneAlt size={20} color="#2563eb" />
-                  </button>
-                ) : (
-                  <button type="button" onClick={() => setAuthMethod('email')} className="social-btn" title="Email">
-                    <MdEmail size={24} color="#ef4444" />
-                  </button>
-                )}
               </div>
             </>
           )}
