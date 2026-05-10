@@ -9,6 +9,7 @@ import './AuthPage.css';
 // Icons
 import { FcGoogle } from 'react-icons/fc';
 import { MdEmail } from 'react-icons/md';
+import { FiEye, FiEyeOff, FiArrowRight } from 'react-icons/fi';
 
 export const AuthPage = () => {
   const [step, setStep] = useState(1); // 1: Email/Phone, 2: Login Password, 3: Signup Details, 4: OTP Verification
@@ -138,7 +139,7 @@ export const AuthPage = () => {
       <div className="auth-card">
         <div className="auth-card-inner">
           <div className="auth-icon-wrapper">
-            <FiArrowRight className="auth-top-icon" />
+            <span className="auth-top-icon">🚗</span>
           </div>
 
           <h2>

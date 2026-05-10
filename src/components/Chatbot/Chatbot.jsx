@@ -78,8 +78,10 @@ Here is the current list of available cars and pricing from our database:\n\n`;
       });
 
       const data = await response.json();
-      
-      if (data.candidates && data.candidates.length > 0) {
+
+      if (response.status === 429) {
+        setMessages(prev => [...prev, { role: 'model', text: 'I am receiving too many requests right now. Please wait a moment and try again! 🙏' }]);
+      } else if (data.candidates && data.candidates.length > 0) {
         const botResponse = data.candidates[0].content.parts[0].text;
         setMessages(prev => [...prev, { role: 'model', text: botResponse }]);
       } else {
