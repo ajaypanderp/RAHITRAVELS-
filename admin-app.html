@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rahi Travels - Standalone Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; }
+    .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); border: 1px solid #e2e8f0; }
+    .btn-primary { background: linear-gradient(to right, #3b82f6, #2563eb); color: white; padding: 10px 20px; border-radius: 8px; font-weight: 600; transition: all 0.2s; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+    .btn-danger { background: #ef4444; color: white; padding: 6px 12px; border-radius: 6px; font-weight: 500; transition: all 0.2s; }
+    .btn-danger:hover { background: #dc2626; }
+    .input-field { width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; transition: border-color 0.2s; }
+    .input-field:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+    .tab-btn { padding: 12px 24px; font-weight: 500; color: #64748b; border-bottom: 2px solid transparent; transition: all 0.2s; }
+    .tab-btn.active { color: #2563eb; border-bottom-color: #2563eb; background: #eff6ff; }
+    .tab-btn:hover:not(.active) { color: #334155; background: #f1f5f9; }
+    [v-cloak] { display: none; }
+  </style>
+</head>
+<body>
+  <div id="app" v-cloak class="min-h-screen flex flex-col">
+    <!-- Login Screen -->
+    <div v-if="!authenticated" class="flex-1 flex items-center justify-center p-4">
+      <div class="glass-card p-8 w-full max-w-md text-center">
+        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600 text-3xl">
+          <i class="ri-shield-user-fill"></i>
+        </div>
+        <h2 class="text-2xl font-bold mb-2">Admin Portal</h2>
+        <p class="text-slate-500 mb-6">Enter your password to manage the platform</p>
+        
+        <form @submit.prevent="login">
+          <div class="mb-4 text-left">
+            <input type="password" v-model="password" class="input-field" placeholder="Admin Password" required>
+          </div>
+          <button type="submit" class="btn-primary w-full">Login</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div v-else class="flex-1 flex flex-col">
+      <header class="bg-white border-b border-slate-200 sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex justify-between items-center h-16">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 bg-blue-600 rounded text-white flex items-center justify-center font-bold text-xl"><i class="ri-dashboard-fill"></i></div>
+              <h1 class="text-xl font-bold text-slate-800">Rahi Travels Admin</h1>
+            </div>
+            <button @click="authenticated = false" class="text-slate-500 hover:text-red-500 font-medium">Logout</button>
+          </div>
+          
+          <div class="flex overflow-x-auto hide-scrollbar">
+            <button @click="activeTab = 'analytics'" :class="['tab-btn whitespace-nowrap', activeTab === 'analytics' ? 'active' : '']"><i class="ri-bar-chart-box-line mr-2"></i>Analytics</button>
+            <button @click="activeTab = 'cars'" :class="['tab-btn whitespace-nowrap', activeTab === 'cars' ? 'active' : '']"><i class="ri-car-line mr-2"></i>Cars</button>
+            <button @click="activeTab = 'bookings'" :class="['tab-btn whitespace-nowrap', activeTab === 'bookings' ? 'active' : '']"><i class="ri-calendar-check-line mr-2"></i>Bookings</button>
+            <button @click="activeTab = 'gallery'" :class="['tab-btn whitespace-nowrap', activeTab === 'gallery' ? 'active' : '']"><i class="ri-image-line mr-2"></i>Gallery</button>
+            <button @click="activeTab = 'users'" :class="['tab-btn whitespace-nowrap', activeTab === 'users' ? 'active' : '']"><i class="ri-group-line mr-2"></i>Users</button>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Loading Overlay -->
+        <div v-if="loading" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div class="text-center">
+            <i class="ri-loader-4-line text-4xl text-blue-600 animate-spin inline-block"></i>
+            <p class="mt-2 font-medium text-slate-600">Processing...</p>
+          </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div v-if="activeTab === 'analytics'" class="space-y-6">
+          <div>
+            <h2 class="text-2xl font-bold mb-4">Visitor Analytics</h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <div class="glass-card p-4 text-center">
+                <p class="text-sm text-slate-500 font-medium mb-1">Today</p>
+                <p class="text-3xl font-bold text-blue-600">{{ stats.today }}</p>
+              </div>
+              <div class="glass-card p-4 text-center">
+                <p class="text-sm text-slate-500 font-medium mb-1">Yesterday</p>
+                <p class="text-3xl font-bold text-emerald-500">{{ stats.yesterday }}</p>
+              </div>
+              <div class="glass-card p-4 text-center">
+                <p class="text-sm text-slate-500 font-medium mb-1">Last 7 Days</p>
+                <p class="text-3xl font-bold text-amber-500">{{ stats.week }}</p>
+              </div>
+              <div class="glass-card p-4 text-center">
+                <p class="text-sm text-slate-500 font-medium mb-1">This Month</p>
+                <p class="text-3xl font-bold text-purple-500">{{ stats.month }}</p>
+              </div>
+              <div class="glass-card p-4 text-center">
+                <p class="text-sm text-slate-500 font-medium mb-1">This Year</p>
+                <p class="text-3xl font-bold text-pink-500">{{ stats.year }}</p>
+              </div>
+              <div class="glass-card p-4 text-center">
+                <p class="text-sm text-slate-500 font-medium mb-1">Lifetime</p>
+                <p class="text-3xl font-bold text-slate-800">{{ stats.lifetime }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cars Tab -->
+        <div v-if="activeTab === 'cars'" class="flex flex-col lg:flex-row gap-6">
+          <div class="w-full lg:w-1/3">
+            <div class="glass-card p-5 mb-6">
+              <h3 class="font-bold text-lg mb-4">Manage Categories</h3>
+              <div class="flex gap-2 mb-4">
+                <input type="text" v-model="newCategory" class="input-field" placeholder="E.g. SUV">
+                <button @click="addCategory" class="btn-primary whitespace-nowrap">Add</button>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <div v-for="cat in categories" :key="cat.id" class="bg-slate-100 px-3 py-1 rounded-full flex items-center gap-2 text-sm border border-slate-200">
+                  {{ cat.name }}
+                  <button @click="deleteCategory(cat.id)" class="text-red-500 hover:text-red-700 font-bold">&times;</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="glass-card p-5">
+              <h3 class="font-bold text-lg mb-4">{{ editingCarId ? 'Edit Car' : 'Add New Car' }}</h3>
+              <form @submit.prevent="saveCar" class="space-y-4">
+                <input type="text" v-model="carForm.name" class="input-field" placeholder="Car Name" required>
+                <input type="text" v-model="carForm.pricePerKm" class="input-field" placeholder="Price (e.g. ₹15/km)" required>
+                
+                <div class="grid grid-cols-2 gap-4">
+                  <select v-model="carForm.category" class="input-field bg-white" required>
+                    <option value="" disabled>Category</option>
+                    <option v-for="cat in categories" :value="cat.name">{{ cat.name }}</option>
+                  </select>
+                  <select v-model="carForm.seats" class="input-field bg-white" required>
+                    <option value="5">5 Seats</option>
+                    <option value="7">7 Seats</option>
+                    <option value="8">8 Seats</option>
+                    <option value="12">12 Seats</option>
+                  </select>
+                </div>
+                
+                <select v-model="carForm.fuelType" class="input-field bg-white" required>
+                  <option value="Petrol">Petrol</option>
+                  <option value="Diesel">Diesel</option>
+                  <option value="CNG">CNG</option>
+                  <option value="EV">EV (Electric)</option>
+                </select>
+                
+                <textarea v-model="carForm.features" class="input-field" rows="2" placeholder="Features (comma separated)"></textarea>
+                
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Main Image</label>
+                  <input type="file" @change="e => carForm.imageFile = e.target.files[0]" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" :required="!editingCarId">
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                  <button type="submit" class="btn-primary flex-1">{{ editingCarId ? 'Update' : 'Publish' }}</button>
+                  <button v-if="editingCarId" type="button" @click="resetCarForm" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300">Cancel</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div class="w-full lg:w-2/3">
+            <h3 class="font-bold text-xl mb-4">Car Inventory ({{ cars.length }})</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div v-for="car in cars" :key="car.id" class="glass-card overflow-hidden flex flex-col">
+                <div class="h-40 bg-slate-100 relative">
+                  <img :src="car.image" class="w-full h-full object-cover" alt="Car">
+                  <div class="absolute top-2 right-2 flex gap-1">
+                    <span class="bg-blue-600 text-white text-xs px-2 py-1 rounded-md">{{ car.category }}</span>
+                    <span class="bg-emerald-500 text-white text-xs px-2 py-1 rounded-md">{{ car.fuelType || 'Petrol' }}</span>
+                  </div>
+                </div>
+                <div class="p-4 flex flex-col flex-1">
+                  <h4 class="font-bold text-lg">{{ car.name }}</h4>
+                  <p class="text-slate-500 text-sm mb-2">{{ car.seats }} Seater • {{ car.pricePerKm }}</p>
+                  <div class="mt-auto pt-4 flex gap-2">
+                    <button @click="editCar(car)" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-1.5 rounded-md font-medium text-sm transition-colors">Edit</button>
+                    <button @click="deleteCar(car.id)" class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 py-1.5 rounded-md font-medium text-sm transition-colors">Delete</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bookings Tab -->
+        <div v-if="activeTab === 'bookings'" class="glass-card overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
+                  <th class="p-4 font-medium">Date</th>
+                  <th class="p-4 font-medium">Customer</th>
+                  <th class="p-4 font-medium">Contact</th>
+                  <th class="p-4 font-medium">Journey</th>
+                  <th class="p-4 font-medium">Car</th>
+                  <th class="p-4 font-medium">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="bookings.length === 0"><td colspan="6" class="p-8 text-center text-slate-500">No bookings yet.</td></tr>
+                <tr v-for="b in bookings" :key="b.id" class="border-b border-slate-100 hover:bg-slate-50">
+                  <td class="p-4 text-sm">{{ b.date }} {{ b.time }}</td>
+                  <td class="p-4 font-medium">{{ b.name }}</td>
+                  <td class="p-4 text-sm">{{ b.mobile }}<br><span class="text-slate-400">{{ b.email }}</span></td>
+                  <td class="p-4 text-sm font-medium">{{ b.from }} &rarr; {{ b.to }}</td>
+                  <td class="p-4 text-sm text-blue-600">{{ b.car || 'Any' }}</td>
+                  <td class="p-4"><button @click="deleteBooking(b.id)" class="text-red-500 hover:text-red-700"><i class="ri-delete-bin-line text-lg"></i></button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Gallery Tab -->
+        <div v-if="activeTab === 'gallery'" class="space-y-6">
+          <div class="glass-card p-6 max-w-md">
+            <h3 class="font-bold text-lg mb-4">Add Photo to Gallery</h3>
+            <form @submit.prevent="addGalleryPhoto" class="flex flex-col gap-4">
+              <input type="file" @change="e => galleryFile = e.target.files[0]" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700" required>
+              <button type="submit" class="btn-primary w-full">Upload Photo</button>
+            </form>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div v-for="photo in gallery" :key="photo.id" class="relative group rounded-xl overflow-hidden aspect-square border border-slate-200">
+              <img :src="photo.url" class="w-full h-full object-cover">
+              <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <button @click="deleteGalleryPhoto(photo.id)" class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 shadow-lg"><i class="ri-delete-bin-line"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Users Tab -->
+        <div v-if="activeTab === 'users'" class="glass-card overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
+                  <th class="p-4 font-medium">Name</th>
+                  <th class="p-4 font-medium">Email</th>
+                  <th class="p-4 font-medium">Phone</th>
+                  <th class="p-4 font-medium">Joined</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="users.length === 0"><td colspan="4" class="p-8 text-center text-slate-500">No users found.</td></tr>
+                <tr v-for="u in users" :key="u.id" class="border-b border-slate-100 hover:bg-slate-50">
+                  <td class="p-4 font-medium">{{ u.name }}</td>
+                  <td class="p-4 text-sm">{{ u.email || 'N/A' }}</td>
+                  <td class="p-4 text-sm">{{ u.phone || 'N/A' }}</td>
+                  <td class="p-4 text-sm text-slate-500">{{ formatDate(u.createdAt) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBmYjm2HNlnX1TA-5C-e_8EHeq4gZyxv8k",
+      authDomain: "rahi-tours-and-travels.firebaseapp.com",
+      projectId: "rahi-tours-and-travels",
+      storageBucket: "rahi-tours-and-travels.firebasestorage.app",
+      messagingSenderId: "456607468009",
+      appId: "1:456607468009:web:46ef369722479220566378"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const uploadToCloudinary = async (file) => {
+      if (!file) return "";
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "Rahi_tours");
+      try {
+        const response = await fetch("https://api.cloudinary.com/v1_1/dr6grdcvt/image/upload", { method: "POST", body: formData });
+        const data = await response.json();
+        return data.secure_url || "";
+      } catch (error) {
+        console.error("Cloudinary Error:", error);
+        return "";
+      }
+    };
+
+    const { createApp, ref, reactive, onMounted } = Vue;
+
+    createApp({
+      setup() {
+        const authenticated = ref(false);
+        const password = ref('');
+        const activeTab = ref('analytics');
+        const loading = ref(false);
+
+        // State
+        const stats = reactive({ today: 0, yesterday: 0, week: 0, month: 0, year: 0, lifetime: 0 });
+        const categories = ref([]);
+        const cars = ref([]);
+        const bookings = ref([]);
+        const gallery = ref([]);
+        const users = ref([]);
+
+        // Forms
+        const newCategory = ref('');
+        const editingCarId = ref(null);
+        const carForm = reactive({ name: '', pricePerKm: '', category: '', seats: '5', fuelType: 'Petrol', features: '', imageFile: null });
+        const galleryFile = ref(null);
+
+        const login = () => {
+          if (password.value === 'Rahi@2026') {
+            authenticated.value = true;
+            fetchData();
+          } else alert('Incorrect Password');
+        };
+
+        const fetchData = async () => {
+          loading.value = true;
+          try {
+            // Visitors Analytics
+            const visSnap = await getDocs(collection(db, "visitors"));
+            const visData = visSnap.docs.map(d => d.data());
+            
+            const now = new Date();
+            const todayStr = now.toDateString();
+            const yday = new Date(now); yday.setDate(yday.getDate() - 1);
+            const ydayStr = yday.toDateString();
+            const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate() - 7);
+            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+            const yearStart = new Date(now.getFullYear(), 0, 1);
+
+            stats.lifetime = visData.length;
+            stats.today = stats.yesterday = stats.week = stats.month = stats.year = 0;
+
+            visData.forEach(v => {
+              if(!v.timestamp) return;
+              const vDate = new Date(v.timestamp.toMillis());
+              if (v.dateString === todayStr) stats.today++;
+              if (v.dateString === ydayStr) stats.yesterday++;
+              if (vDate >= weekAgo) stats.week++;
+              if (vDate >= monthStart) stats.month++;
+              if (vDate >= yearStart) stats.year++;
+            });
+
+            // Categories
+            const catSnap = await getDocs(collection(db, "categories"));
+            categories.value = catSnap.docs.map(d => ({id: d.id, ...d.data()}));
+
+            // Cars
+            const carSnap = await getDocs(collection(db, "cars"));
+            cars.value = carSnap.docs.map(d => ({id: d.id, ...d.data()}));
+
+            // Bookings
+            const bookSnap = await getDocs(collection(db, "bookings"));
+            let bData = bookSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            bData.sort((a,b) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
+            bookings.value = bData;
+
+            // Gallery
+            const galSnap = await getDocs(collection(db, "gallery"));
+            gallery.value = galSnap.docs.map(d => ({id: d.id, ...d.data()}));
+
+            // Users
+            const userSnap = await getDocs(collection(db, "users"));
+            users.value = userSnap.docs.map(d => ({id: d.id, ...d.data()}));
+
+          } catch (e) { console.error("Error fetching", e); }
+          loading.value = false;
+        };
+
+        const formatDate = (ts) => ts ? new Date(ts.toMillis()).toLocaleDateString() : 'N/A';
+
+        // Actions
+        const addCategory = async () => {
+          if (!newCategory.value) return;
+          loading.value = true;
+          await addDoc(collection(db, "categories"), { name: newCategory.value });
+          newCategory.value = '';
+          await fetchData();
+        };
+
+        const deleteCategory = async (id) => {
+          if (confirm("Delete this category?")) {
+            loading.value = true;
+            await deleteDoc(doc(db, "categories", id));
+            await fetchData();
+          }
+        };
+
+        const resetCarForm = () => {
+          editingCarId.value = null;
+          carForm.name = ''; carForm.pricePerKm = ''; carForm.category = ''; 
+          carForm.seats = '5'; carForm.fuelType = 'Petrol'; carForm.features = ''; carForm.imageFile = null;
+        };
+
+        const saveCar = async () => {
+          loading.value = true;
+          try {
+            let imageUrl = carForm.existingImage;
+            if (carForm.imageFile) {
+              imageUrl = await uploadToCloudinary(carForm.imageFile);
+            }
+            const data = {
+              name: carForm.name,
+              pricePerKm: carForm.pricePerKm,
+              category: carForm.category,
+              seats: carForm.seats,
+              fuelType: carForm.fuelType,
+              features: carForm.features.split(',').map(f => f.trim()).filter(f => f),
+              image: imageUrl
+            };
+
+            if (editingCarId.value) {
+              await updateDoc(doc(db, "cars", editingCarId.value), data);
+            } else {
+              await addDoc(collection(db, "cars"), data);
+            }
+            resetCarForm();
+            await fetchData();
+          } catch(e) { alert("Error saving car"); }
+          loading.value = false;
+        };
+
+        const editCar = (car) => {
+          editingCarId.value = car.id;
+          carForm.name = car.name; carForm.pricePerKm = car.pricePerKm; carForm.category = car.category;
+          carForm.seats = car.seats || '5'; carForm.fuelType = car.fuelType || 'Petrol';
+          carForm.features = car.features ? car.features.join(', ') : '';
+          carForm.existingImage = car.image;
+        };
+
+        const deleteCar = async (id) => {
+          if(confirm("Delete car?")) {
+            loading.value = true;
+            await deleteDoc(doc(db, "cars", id));
+            await fetchData();
+          }
+        };
+
+        const deleteBooking = async (id) => {
+          if(confirm("Delete booking?")) {
+            loading.value = true;
+            await deleteDoc(doc(db, "bookings", id));
+            await fetchData();
+          }
+        };
+
+        const addGalleryPhoto = async () => {
+          if (!galleryFile.value) return;
+          loading.value = true;
+          const url = await uploadToCloudinary(galleryFile.value);
+          if (url) {
+            await addDoc(collection(db, "gallery"), { url });
+            galleryFile.value = null;
+            await fetchData();
+          }
+          loading.value = false;
+        };
+
+        const deleteGalleryPhoto = async (id) => {
+          if(confirm("Delete photo?")) {
+            loading.value = true;
+            await deleteDoc(doc(db, "gallery", id));
+            await fetchData();
+          }
+        };
+
+        return {
+          authenticated, password, login, activeTab, loading,
+          stats, categories, cars, bookings, gallery, users, formatDate,
+          newCategory, addCategory, deleteCategory,
+          carForm, saveCar, editCar, deleteCar, resetCarForm, editingCarId,
+          deleteBooking,
+          galleryFile, addGalleryPhoto, deleteGalleryPhoto
+        }
+      }
+    }).mount('#app');
+  </script>
+</body>
+</html>
