@@ -69,10 +69,7 @@ Here is the current list of available cars and pricing from our database:\n\n`;
         ]
       };
 
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (!apiKey) {
-        throw new Error("Gemini API Key is missing. Please add VITE_GEMINI_API_KEY to .env");
-      }
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyALI9A1ey1SkRct8do6KW_WCbn4hzYQDl0';
 
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
