@@ -25,6 +25,7 @@ const Services = lazy(() => import('./components/Services/Services').then(module
 const Download = lazy(() => import('./components/Download/Download').then(module => ({ default: module.Download })));
 const Footer = lazy(() => import('./components/Footer/Footer').then(module => ({ default: module.Footer })));
 const FloatingContact = lazy(() => import('./components/FloatingContact/FloatingContact').then(module => ({ default: module.FloatingContact })));
+const Chatbot = lazy(() => import('./components/Chatbot/Chatbot').then(module => ({ default: module.Chatbot })));
 
 // Admin Panel
 const AdminPanel = lazy(() => import('./components/Admin/AdminPanel').then(module => ({ default: module.AdminPanel })));
@@ -97,6 +98,7 @@ const AppLayout = () => {
         <Route path="/profile" element={<ProfilePage />} />
       </Routes>
       {!hideNavFooter && <Footer />}
+      {!hideNavFooter && <Chatbot />}
       <PwaInstallPopup />
       <NotificationChecker />
     </Suspense>
