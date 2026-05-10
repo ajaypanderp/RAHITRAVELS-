@@ -73,6 +73,16 @@ export const Navbar = () => {
     <nav className="navbar">
       <div className="container">
         <div className="navbar-content">
+          <div className="mobile-menu">
+            <button onClick={toggleNavbar}>
+              {mobileDrawerOpen ? (
+                <i className="ri-close-large-fill"></i>
+              ) : (
+                <i className="ri-menu-3-fill"></i>
+              )}
+            </button>
+          </div>
+
           <div className="text-container" onClick={scrollToTop} style={{cursor: 'pointer'}}>
             <h1 className="logo-text" style={{ fontSize: "1.5rem" }}>
               Ayodhya<i className="ri-map-pin-2-fill"></i>Darshan Express
@@ -104,16 +114,6 @@ export const Navbar = () => {
                 <a href="#" className="btn btn-gradient" onClick={(e) => { e.preventDefault(); navigate('/auth'); }}>Create Account</a>
               </>
             )}
-          </div>
-
-          <div className="mobile-menu">
-            <button onClick={toggleNavbar}>
-              {mobileDrawerOpen ? (
-                <i className="ri-close-large-fill"></i>
-              ) : (
-                <i className="ri-menu-3-fill"></i>
-              )}
-            </button>
           </div>
         </div>
 

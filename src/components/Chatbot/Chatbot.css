@@ -49,7 +49,7 @@
 }
 
 .chatbot-header {
-  background: #2563eb;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: white;
   padding: 15px 20px;
   display: flex;
@@ -57,12 +57,23 @@
   justify-content: space-between;
 }
 
-.chatbot-header h3 {
-  margin: 0;
-  font-size: 1.1rem;
+.chatbot-header-info {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  font-size: 22px;
+}
+
+.chatbot-header-info h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.chatbot-status {
+  font-size: 0.72rem;
+  opacity: 0.85;
 }
 
 .online-dot {
@@ -161,6 +172,11 @@
 
 .chatbot-input button:hover:not(:disabled) {
   background: #1d4ed8;
+}
+
+.cooldown-text {
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .typing span {
