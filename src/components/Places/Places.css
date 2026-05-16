@@ -47,17 +47,90 @@
   font-weight: 700;
 }
 
+/* Carousel wrapper */
+.carousel-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.carousel-button {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  position: absolute;
+  top: 45%;
+  transform: translateY(-50%);
+  z-index: 10;
+  transition: all 0.3s ease;
+  color: var(--primary-color, #2563eb);
+  font-size: 1.5rem;
+}
+
+.carousel-button:hover {
+  background: var(--primary-color, #2563eb);
+  color: white;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-button.prev {
+  left: -20px;
+}
+
+.carousel-button.next {
+  right: -20px;
+}
+
+/* Places Grid */
+.places-window {
+  overflow-x: auto;
+  width: 100%;
+  padding-bottom: 20px; /* space for box-shadow */
+  scroll-behavior: smooth;
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.places-window::-webkit-scrollbar {
+  display: none;
+}
+
 .places-grid {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
   gap: 30px;
+  width: max-content; /* Allows it to expand beyond window if sliding */
+  min-width: 100%;
+}
+
+.places-grid.centered {
+  justify-content: center;
+  width: 100%;
 }
 
 .place-card-wrapper {
-  flex: 0 0 calc(25% - 22.5px); /* 4 per row */
-  max-width: 320px; /* Prevent them from getting too wide if there's only 1 or 2 items */
-  width: 100%;
+  flex-shrink: 0;
+}
+
+/* Card Widths Based on Count */
+.place-card-wrapper.count-1 {
+  width: 100%; /* Full width banner */
+  max-width: 1000px;
+}
+
+.place-card-wrapper.count-2 {
+  width: calc(50% - 15px); /* Two cards */
+}
+
+.place-card-wrapper.count-3, .place-card-wrapper.count-more {
+  width: calc(33.333% - 20px); /* Three or more cards */
 }
 
 .place-card {
@@ -78,8 +151,10 @@
   box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
 }
 
+/* 16:9 Aspect Ratio */
 .place-img-container {
-  height: 240px;
+  aspect-ratio: 16 / 9;
+  width: 100%;
   overflow: hidden;
   position: relative;
 }
@@ -134,43 +209,32 @@
   background: #fff;
 }
 
-/* Tablet (up to 1024px) - 3 items per row */
+/* Responsive Rules */
 @media (max-width: 1024px) {
-  .place-card-wrapper {
-    flex: 0 0 calc(33.333% - 20px);
+  .place-card-wrapper.count-3, .place-card-wrapper.count-more {
+    width: calc(50% - 15px); /* 2 per row on tablets */
   }
 }
 
-/* Small Tablet (up to 768px) - 2 items per row */
 @media (max-width: 768px) {
-  .place-card-wrapper {
-    flex: 0 0 calc(50% - 15px);
-  }
-}
-
-/* Mobile - Horizontal Slideshow */
-@media (max-width: 640px) {
   .places-grid {
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    padding-bottom: 20px;
-    -ms-overflow-style: none; /* IE and Edge */
-    scrollbar-width: none; /* Firefox */
+    gap: 15px;
   }
   
-  .places-grid::-webkit-scrollbar {
-    display: none;
+  .carousel-button {
+    display: none; /* Hide arrows on mobile, rely on swipe */
   }
-
+  
+  .places-window {
+    scroll-snap-type: x mandatory;
+  }
+  
   .place-card-wrapper {
-    flex: 0 0 85%;
-    max-width: none;
+    width: 85% !important; /* Peek next card */
     scroll-snap-align: center;
   }
   
-  .city-title {
-    font-size: 2rem;
+  .place-card-wrapper.count-1 {
+    width: 100% !important;
   }
 }

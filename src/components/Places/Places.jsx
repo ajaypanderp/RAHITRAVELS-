@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../../firebaseConfig';
 import { collection, getDocs } from 'firebase/firestore';
-import './Places.css'; // Import the new CSS file
+import './Places.css';
 
 const defaultPlaces = [
   { id: 'default1', city: 'Ayodhya Darshan', name: 'Ram Mandir', photoUrls: ['https://images.unsplash.com/photo-1706692997103-6cb6388dece2?q=80&w=800&auto=format&fit=crop'] },
@@ -15,7 +15,7 @@ const defaultPlaces = [
   { id: 'default9', city: 'Prayagraj', name: 'Anand Bhawan', photoUrls: ['https://images.unsplash.com/photo-1634152962476-4b8a00e1915c?q=80&w=800&auto=format&fit=crop'] }
 ];
 
-const PlaceCard = ({ place }) => {
+const PlaceCard = ({ place, countClass }) => {
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
   const images = place.photoUrls && place.photoUrls.length > 0 ? place.photoUrls : (place.photoUrl ? [place.photoUrl] : []);
 
@@ -23,12 +23,12 @@ const PlaceCard = ({ place }) => {
     if (images.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentImgIndex((prev) => (prev + 1) % images.length);
-    }, 3000); // Change image every 3 seconds
+    }, 3000); 
     return () => clearInterval(interval);
   }, [images.length]);
 
   return (
-    <div className="place-card-wrapper">
+    <div className={`place-card-wrapper ${countClass}`}>
       <div className="place-card">
         <div className="place-img-container">
           {images.map((img, idx) => (
@@ -62,6 +62,63 @@ const PlaceCard = ({ place }) => {
   );
 };
 
+const CitySection = ({ city, places }) => {
+  const scrollRef = useRef(null);
+
+  const scrollLeft = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: -(scrollRef.current.offsetWidth * 0.8), behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: scrollRef.current.offsetWidth * 0.8, behavior: 'smooth' });
+    }
+  };
+
+  // Determine width class based on number of items
+  const countClass = places.length === 1 ? 'count-1' 
+                   : places.length === 2 ? 'count-2' 
+                   : places.length === 3 ? 'count-3' 
+                   : 'count-more';
+
+  return (
+    <div className="city-section">
+      <div className="city-header">
+        <div className="city-subtitle">
+          <div className="city-line"></div>
+          <span className="city-subtitle-text">Many Tourists Visit</span>
+          <div className="city-line"></div>
+        </div>
+        <h2 className="city-title">{city}</h2>
+      </div>
+      
+      <div className="carousel-container">
+        {places.length > 3 && (
+          <button className="carousel-button prev" onClick={scrollLeft}>
+            <i className="ri-arrow-left-s-line"></i>
+          </button>
+        )}
+        
+        <div className="places-window" ref={scrollRef}>
+          <div className={`places-grid ${places.length <= 3 ? 'centered' : ''}`}>
+            {places.map(place => (
+              <PlaceCard key={place.id} place={place} countClass={countClass} />
+            ))}
+          </div>
+        </div>
+
+        {places.length > 3 && (
+          <button className="carousel-button next" onClick={scrollRight}>
+            <i className="ri-arrow-right-s-line"></i>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export const Places = () => {
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -71,8 +128,6 @@ export const Places = () => {
       try {
         const snapshot = await getDocs(collection(db, "places"));
         const fetchedPlaces = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        // If DB has places, but they don't have a city, group them nicely anyway.
-        // If DB is completely empty, we use defaults.
         setPlaces(fetchedPlaces.length > 0 ? fetchedPlaces : defaultPlaces);
       } catch (err) {
         console.error("Error fetching places:", err);
@@ -86,7 +141,6 @@ export const Places = () => {
   if (loading) return null;
   if (places.length === 0) return null;
 
-  // Group places by city
   const groupedPlaces = places.reduce((acc, place) => {
     const city = place.city || 'Other Destinations';
     if (!acc[city]) {
@@ -100,26 +154,7 @@ export const Places = () => {
     <section className="places-section">
       <div className="places-container">
         {Object.entries(groupedPlaces).map(([city, cityPlaces], index) => (
-          <div key={index} className="city-section">
-            
-            <div className="city-header">
-              <div className="city-subtitle">
-                <div className="city-line"></div>
-                <span className="city-subtitle-text">
-                  Many Tourists Visit
-                </span>
-                <div className="city-line"></div>
-              </div>
-              <h2 className="city-title">{city}</h2>
-            </div>
-            
-            <div className="places-grid">
-              {cityPlaces.map(place => (
-                <PlaceCard key={place.id} place={place} />
-              ))}
-            </div>
-
-          </div>
+          <CitySection key={index} city={city} places={cityPlaces} />
         ))}
       </div>
     </section>
