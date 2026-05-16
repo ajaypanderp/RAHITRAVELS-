@@ -306,8 +306,18 @@
             <form @submit.prevent="savePlace" class="flex flex-col gap-4">
               <input type="text" v-model="placeForm.city" class="input-field" placeholder="Section Name (e.g. Ayodhya Darshan)" required>
               <input type="text" v-model="placeForm.name" class="input-field" placeholder="Place Name (e.g. Ram Mandir)" required>
-              <input type="url" v-model="placeForm.photoUrl" class="input-field" placeholder="Direct Photo URL" required>
-              <div class="flex gap-2">
+              
+              <div class="flex flex-col gap-2">
+                <label class="text-xs font-bold text-slate-500 uppercase">Image URLs (Slideshow)</label>
+                <div v-for="(url, index) in placeForm.photoUrls" :key="index" class="flex gap-2 items-center">
+                  <img v-if="url" :src="url" class="w-10 h-10 object-cover rounded" @error="$event.target.style.display='none'">
+                  <input type="url" v-model="placeForm.photoUrls[index]" class="input-field flex-1" placeholder="Direct Photo URL" :required="index === 0">
+                  <button v-if="placeForm.photoUrls.length > 1" type="button" @click="removePlaceUrl(index)" class="p-2 bg-red-50 text-red-600 rounded hover:bg-red-100">&times;</button>
+                </div>
+                <button type="button" @click="addPlaceUrl" class="text-sm bg-slate-100 text-slate-600 py-2 rounded font-medium hover:bg-slate-200">+ Add Another Image Link</button>
+              </div>
+
+              <div class="flex gap-2 mt-2">
                 <button type="submit" class="btn-primary flex-1">{{ editingPlaceId ? 'Update Place' : 'Add Place' }}</button>
                 <button v-if="editingPlaceId" type="button" @click="resetPlaceForm" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300">Cancel</button>
               </div>
@@ -317,8 +327,11 @@
             <h3 class="font-bold text-lg mb-4">Service Places ({{ places.length }})</h3>
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               <div v-if="places.length === 0" class="col-span-full text-center text-slate-500 py-8 glass-card">No places added yet.</div>
-              <div v-for="p in places" :key="p.id" class="glass-card overflow-hidden">
-                <img :src="p.photoUrl" :alt="p.name" class="w-full h-36 object-cover">
+              <div v-for="p in places" :key="p.id" class="glass-card overflow-hidden relative">
+                <img :src="p.photoUrls && p.photoUrls.length > 0 ? p.photoUrls[0] : p.photoUrl" :alt="p.name" class="w-full h-36 object-cover">
+                <div v-if="p.photoUrls && p.photoUrls.length > 1" class="absolute top-2 right-2 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded">
+                  {{ p.photoUrls.length }} Images
+                </div>
                 <div class="p-3">
                   <p class="text-xs font-bold text-blue-600 mb-1">{{ p.city || 'Other' }}</p>
                   <p class="font-semibold text-slate-800 mb-2">{{ p.name }}</p>
@@ -436,7 +449,7 @@
         const newKeyValue = ref('');
         const heroFile = ref(null);
         const heroRemoveBg = ref(false);
-        const placeForm = reactive({ name: '', photoUrl: '', city: '' });
+        const placeForm = reactive({ name: '', photoUrls: [''], city: '' });
         const editingPlaceId = ref(null);
 
         // Forms
@@ -682,14 +695,26 @@
         const resetPlaceForm = () => {
           editingPlaceId.value = null;
           placeForm.name = '';
-          placeForm.photoUrl = '';
+          placeForm.photoUrls = [''];
           placeForm.city = '';
         };
 
+        const addPlaceUrl = () => {
+          placeForm.photoUrls.push('');
+        };
+
+        const removePlaceUrl = (index) => {
+          placeForm.photoUrls.splice(index, 1);
+        };
+
         const savePlace = async () => {
-          if (!placeForm.name || !placeForm.photoUrl || !placeForm.city) return;
+          const validUrls = placeForm.photoUrls.filter(url => url.trim() !== '');
+          if (!placeForm.name || validUrls.length === 0 || !placeForm.city) {
+            alert("Please provide at least one valid image URL, name, and city.");
+            return;
+          }
           loading.value = true;
-          const data = { name: placeForm.name, photoUrl: placeForm.photoUrl, city: placeForm.city };
+          const data = { name: placeForm.name, photoUrls: validUrls, city: placeForm.city, photoUrl: validUrls[0] };
           if (editingPlaceId.value) {
             await updateDoc(doc(db, "places", editingPlaceId.value), data);
           } else {
@@ -702,8 +727,14 @@
         const editPlace = (place) => {
           editingPlaceId.value = place.id;
           placeForm.name = place.name;
-          placeForm.photoUrl = place.photoUrl;
           placeForm.city = place.city || '';
+          if (place.photoUrls && place.photoUrls.length > 0) {
+            placeForm.photoUrls = [...place.photoUrls];
+          } else if (place.photoUrl) {
+            placeForm.photoUrls = [place.photoUrl];
+          } else {
+            placeForm.photoUrls = [''];
+          }
         };
 
         const deletePlace = async (id) => {
@@ -731,7 +762,7 @@
           galleryFile, addGalleryPhoto, deleteGalleryPhoto,
           apiKeys, newKeyLabel, newKeyValue, saveApiKey, deleteApiKey,
           heroImages, heroFile, heroRemoveBg, addHeroImage, deleteHeroImage, toggleHeroBg,
-          places, placeForm, savePlace, editPlace, deletePlace, resetPlaceForm, editingPlaceId
+          places, placeForm, savePlace, editPlace, deletePlace, resetPlaceForm, editingPlaceId, addPlaceUrl, removePlaceUrl
         }
       }
     }).mount('#app');

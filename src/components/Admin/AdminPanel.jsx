@@ -24,7 +24,7 @@ export const AdminPanel = () => {
 
   // Places State
   const [places, setPlaces] = useState([]);
-  const [placeForm, setPlaceForm] = useState({ name: '', photoUrl: '', city: '' });
+  const [placeForm, setPlaceForm] = useState({ name: '', photoUrls: [''], city: '' });
   const [editingPlaceId, setEditingPlaceId] = useState(null);
 
   // Visitors State
@@ -332,9 +332,17 @@ export const AdminPanel = () => {
   // Place Actions
   const handleSavePlace = async (e) => {
     e.preventDefault();
-    if (!placeForm.name || !placeForm.photoUrl || !placeForm.city) return;
+    const validUrls = placeForm.photoUrls.filter(url => url.trim() !== '');
+    if (!placeForm.name || validUrls.length === 0 || !placeForm.city) {
+      alert("Please provide at least one valid image URL, name, and city.");
+      return;
+    }
+    
     try {
-      const data = { name: placeForm.name, photoUrl: placeForm.photoUrl, city: placeForm.city };
+      const data = { name: placeForm.name, photoUrls: validUrls, city: placeForm.city };
+      // Keep legacy photoUrl populated for safety, set it to the first image
+      data.photoUrl = validUrls[0];
+
       if (editingPlaceId) {
         await updateDoc(doc(db, "places", editingPlaceId), data);
         alert("Place Updated Successfully!");
@@ -342,7 +350,7 @@ export const AdminPanel = () => {
         await addDoc(collection(db, "places"), data);
         alert("Place Added Successfully!");
       }
-      setPlaceForm({ name: '', photoUrl: '', city: '' });
+      setPlaceForm({ name: '', photoUrls: [''], city: '' });
       setEditingPlaceId(null);
       fetchPlaces();
     } catch(err) {
@@ -352,16 +360,36 @@ export const AdminPanel = () => {
 
   const handleEditPlace = (place) => {
     setEditingPlaceId(place.id);
+    let urls = [''];
+    if (place.photoUrls && place.photoUrls.length > 0) urls = place.photoUrls;
+    else if (place.photoUrl) urls = [place.photoUrl];
+
     setPlaceForm({
       name: place.name,
-      photoUrl: place.photoUrl,
+      photoUrls: urls,
       city: place.city || ''
     });
   };
 
   const cancelEditPlace = () => {
     setEditingPlaceId(null);
-    setPlaceForm({ name: '', photoUrl: '', city: '' });
+    setPlaceForm({ name: '', photoUrls: [''], city: '' });
+  };
+  
+  const addPlaceUrlField = () => {
+    setPlaceForm({ ...placeForm, photoUrls: [...placeForm.photoUrls, ''] });
+  };
+
+  const removePlaceUrlField = (index) => {
+    const newUrls = [...placeForm.photoUrls];
+    newUrls.splice(index, 1);
+    setPlaceForm({ ...placeForm, photoUrls: newUrls });
+  };
+  
+  const updatePlaceUrlField = (index, value) => {
+    const newUrls = [...placeForm.photoUrls];
+    newUrls[index] = value;
+    setPlaceForm({ ...placeForm, photoUrls: newUrls });
   };
 
   const handleDeletePlace = async (id) => {
@@ -633,13 +661,36 @@ export const AdminPanel = () => {
 
       {activeTab === 'places' && (
         <div className="admin-content full-width">
-          <div class="card" style={{ marginBottom: '20px', maxWidth: '500px' }}>
+          <div className="card" style={{ marginBottom: '20px', maxWidth: '500px' }}>
             <h3>{editingPlaceId ? 'Edit Service Location' : 'Add Service Location'}</h3>
             <form onSubmit={handleSavePlace} className="admin-form">
               <input type="text" placeholder="Section Name (e.g. Ayodhya Darshan)" required value={placeForm.city} onChange={(e) => setPlaceForm({...placeForm, city: e.target.value})} />
               <input type="text" placeholder="Place Name (e.g. Ram Mandir)" required value={placeForm.name} onChange={(e) => setPlaceForm({...placeForm, name: e.target.value})} />
-              <input type="url" placeholder="Photo URL (Direct Link)" required value={placeForm.photoUrl} onChange={(e) => setPlaceForm({...placeForm, photoUrl: e.target.value})} />
-              <div style={{ display: 'flex', gap: '10px' }}>
+              
+              <div style={{ marginTop: '10px' }}>
+                <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#64748b', display: 'block', marginBottom: '5px' }}>Image URLs (Slideshow)</label>
+                {placeForm.photoUrls.map((url, index) => (
+                  <div key={index} style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
+                    {url && (
+                      <img src={url} alt="Preview" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} onError={(e) => e.target.style.display = 'none'} />
+                    )}
+                    <input 
+                      type="url" 
+                      placeholder="Photo URL (Direct Link)" 
+                      required={index === 0} 
+                      value={url} 
+                      onChange={(e) => updatePlaceUrlField(index, e.target.value)} 
+                      style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+                    />
+                    {placeForm.photoUrls.length > 1 && (
+                      <button type="button" onClick={() => removePlaceUrlField(index)} className="delete-btn-small" style={{ padding: '10px' }}>&times;</button>
+                    )}
+                  </div>
+                ))}
+                <button type="button" onClick={addPlaceUrlField} style={{ background: '#e2e8f0', color: '#334155', border: 'none', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>+ Add Another Image Link</button>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
                 <button type="submit" className="primary-btn" style={{ flex: 1 }}>{editingPlaceId ? 'Update Place' : 'Add Place'}</button>
                 {editingPlaceId && <button type="button" onClick={cancelEditPlace} className="secondary-btn">Cancel</button>}
               </div>
@@ -650,7 +701,14 @@ export const AdminPanel = () => {
           <div className="car-grid">
             {places.map(p => (
               <div key={p.id} className="car-card">
-                <img src={p.photoUrl} alt={p.name} />
+                <div style={{ position: 'relative', height: '150px' }}>
+                  <img src={p.photoUrls && p.photoUrls.length > 0 ? p.photoUrls[0] : p.photoUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  {p.photoUrls && p.photoUrls.length > 1 && (
+                    <div style={{ position: 'absolute', bottom: '5px', right: '5px', background: 'rgba(0,0,0,0.6)', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>
+                      {p.photoUrls.length} Images
+                    </div>
+                  )}
+                </div>
                 <div className="car-info">
                   <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#2563eb', display: 'block', marginBottom: '5px' }}>{p.city || 'Other'}</span>
                   <h4>{p.name}</h4>
