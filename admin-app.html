@@ -445,11 +445,11 @@
 
         const fetchData = async () => {
           loading.value = true;
+
+          // Visitors Analytics
           try {
-            // Visitors Analytics
             const visSnap = await getDocs(collection(db, "visitors"));
             const visData = visSnap.docs.map(d => d.data());
-            
             const now = new Date();
             const todayStr = now.toDateString();
             const yday = new Date(now); yday.setDate(yday.getDate() - 1);
@@ -457,10 +457,8 @@
             const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate() - 7);
             const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
             const yearStart = new Date(now.getFullYear(), 0, 1);
-
             stats.lifetime = visData.length;
             stats.today = stats.yesterday = stats.week = stats.month = stats.year = 0;
-
             visData.forEach(v => {
               if(!v.timestamp) return;
               const vDate = new Date(v.timestamp.toMillis());
@@ -470,44 +468,60 @@
               if (vDate >= monthStart) stats.month++;
               if (vDate >= yearStart) stats.year++;
             });
+          } catch(e) { console.warn("visitors:", e.code); }
 
-            // Categories
+          // Categories
+          try {
             const catSnap = await getDocs(collection(db, "categories"));
             categories.value = catSnap.docs.map(d => ({id: d.id, ...d.data()}));
+          } catch(e) { console.warn("categories:", e.code); }
 
-            // Cars
+          // Cars
+          try {
             const carSnap = await getDocs(collection(db, "cars"));
             cars.value = carSnap.docs.map(d => ({id: d.id, ...d.data()}));
+          } catch(e) { console.warn("cars:", e.code); }
 
-            // Bookings
+          // Bookings
+          try {
             const bookSnap = await getDocs(collection(db, "bookings"));
             let bData = bookSnap.docs.map(d => ({id: d.id, ...d.data()}));
-            bData.sort((a,b) => b.createdAt?.toMillis() - a.createdAt?.toMillis());
+            bData.sort((a,b) => (b.createdAt?.toMillis()||0) - (a.createdAt?.toMillis()||0));
             bookings.value = bData;
+          } catch(e) { console.warn("bookings:", e.code); }
 
-            // Gallery
+          // Gallery
+          try {
             const galSnap = await getDocs(collection(db, "gallery"));
             gallery.value = galSnap.docs.map(d => ({id: d.id, ...d.data()}));
+          } catch(e) { console.warn("gallery:", e.code); }
 
-            // Users
+          // Users
+          try {
             const userSnap = await getDocs(collection(db, "users"));
             users.value = userSnap.docs.map(d => ({id: d.id, ...d.data()}));
+          } catch(e) { console.warn("users:", e.code); }
 
-            // API Keys
+          // API Keys
+          try {
             const keySnap = await getDocs(collection(db, "api_keys"));
             let keyData = keySnap.docs.map(d => ({id: d.id, ...d.data()}));
-            keyData.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+            keyData.sort((a, b) => (b.createdAt?.toMillis()||0) - (a.createdAt?.toMillis()||0));
             apiKeys.value = keyData;
+          } catch(e) { console.warn("api_keys:", e.code); }
 
-            // Hero Images
+          // Hero Images
+          try {
             const heroSnap = await getDocs(collection(db, "hero_images"));
             heroImages.value = heroSnap.docs.map(d => ({id: d.id, ...d.data()}));
+          } catch(e) { console.warn("hero_images:", e.code); }
 
-            // Places
+          // Places
+          try {
             const placesSnap = await getDocs(collection(db, "places"));
             places.value = placesSnap.docs.map(d => ({id: d.id, ...d.data()}));
+          } catch(e) { console.warn("places:", e.code); }
 
-          } catch (e) { console.error("Error fetching", e); }
           loading.value = false;
         };
 

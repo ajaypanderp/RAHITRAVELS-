@@ -20,31 +20,23 @@ export const FAQ = () => {
   const faqs = [
     {
       question: "What documents do I need to rent a car?",
-      answer: "You will need a valid driving license, a government-issued ID (like Aadhar or Passport), and a credit/debit card for the security deposit."
+      answer: "You will only need your Aadhar card for verification."
     },
     {
       question: "Is fuel included in the rental price?",
-      answer: "No, fuel is not included. The car will be provided with a certain amount of fuel, and you are expected to return it with the same level."
-    },
-    {
-      question: "What happens if the car breaks down?",
-      answer: "We provide 24/7 roadside assistance. Just call our support number, and we will dispatch help or a replacement vehicle immediately."
-    },
-    {
-      question: "Can I take the car outside the state?",
-      answer: "Yes, outstation travel is allowed. However, state border taxes and toll fees are to be paid by the customer."
+      answer: "Yes, fuel is included in the price of the car."
     },
     {
       question: "What is your cancellation policy?",
-      answer: "You can cancel for free up to 24 hours before your pickup time. Cancellations made within 24 hours may be subject to a fee."
+      answer: "Your money will be returned between 7 to 15 days in case of cancellation."
     },
     {
-      question: "Are there any hidden charges?",
-      answer: "No, our pricing is transparent. The total cost includes the rental fee and applicable taxes. Fuel and tolls are extra."
+      question: "Are there any extra charges for outstation travel?",
+      answer: "For outside the state, customers have to pay toll, border tax, parking, and driver night charges."
     },
     {
       question: "What is the minimum age to rent a car?",
-      answer: "The minimum age to rent a car is 21 years. You must also have a valid driving license held for at least one year."
+      answer: "Anyone can book our cars, there is no age limit."
     }
   ];
 

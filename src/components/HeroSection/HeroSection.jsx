@@ -81,7 +81,7 @@ export const HeroSection = () => {
     <main>
       <section className="text-section" ref={textRef}>
         <h1>
-          Discover India with <span>Ayodhya Darshan Express</span>
+          Explore religious temples and places with us
         </h1>
         <p>
           Experience unforgettable spiritual and cultural journeys to Ayodhya, Banaras, Chitrakoot, and beyond. We provide comprehensive travel solutions, ensuring comfort, safety, and a deeply enriching travel experience from start to finish.
