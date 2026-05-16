@@ -302,11 +302,15 @@
         <!-- Places Tab -->
         <div v-if="activeTab === 'places'" class="space-y-6">
           <div class="glass-card p-6 max-w-lg">
-            <h3 class="font-bold text-lg mb-4"><i class="ri-map-pin-line text-blue-600 mr-2"></i>Add Service Location / Place</h3>
-            <form @submit.prevent="addPlace" class="flex flex-col gap-4">
-              <input type="text" v-model="placeForm.name" class="input-field" placeholder="Place Name (e.g. Ayodhya)" required>
+            <h3 class="font-bold text-lg mb-4"><i class="ri-map-pin-line text-blue-600 mr-2"></i>{{ editingPlaceId ? 'Edit Service Location' : 'Add Service Location' }}</h3>
+            <form @submit.prevent="savePlace" class="flex flex-col gap-4">
+              <input type="text" v-model="placeForm.city" class="input-field" placeholder="Section Name (e.g. Ayodhya Darshan)" required>
+              <input type="text" v-model="placeForm.name" class="input-field" placeholder="Place Name (e.g. Ram Mandir)" required>
               <input type="url" v-model="placeForm.photoUrl" class="input-field" placeholder="Direct Photo URL" required>
-              <button type="submit" class="btn-primary w-full">Add Place</button>
+              <div class="flex gap-2">
+                <button type="submit" class="btn-primary flex-1">{{ editingPlaceId ? 'Update Place' : 'Add Place' }}</button>
+                <button v-if="editingPlaceId" type="button" @click="resetPlaceForm" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg font-medium hover:bg-slate-300">Cancel</button>
+              </div>
             </form>
           </div>
           <div>
@@ -316,8 +320,12 @@
               <div v-for="p in places" :key="p.id" class="glass-card overflow-hidden">
                 <img :src="p.photoUrl" :alt="p.name" class="w-full h-36 object-cover">
                 <div class="p-3">
+                  <p class="text-xs font-bold text-blue-600 mb-1">{{ p.city || 'Other' }}</p>
                   <p class="font-semibold text-slate-800 mb-2">{{ p.name }}</p>
-                  <button @click="deletePlace(p.id)" class="btn-danger w-full text-sm"><i class="ri-delete-bin-line mr-1"></i>Delete</button>
+                  <div class="flex gap-2 mt-2">
+                    <button @click="editPlace(p)" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-1.5 rounded-md font-medium text-sm transition-colors">Edit</button>
+                    <button @click="deletePlace(p.id)" class="flex-1 bg-red-50 hover:bg-red-100 text-red-600 py-1.5 rounded-md font-medium text-sm transition-colors">Delete</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -428,7 +436,8 @@
         const newKeyValue = ref('');
         const heroFile = ref(null);
         const heroRemoveBg = ref(false);
-        const placeForm = reactive({ name: '', photoUrl: '' });
+        const placeForm = reactive({ name: '', photoUrl: '', city: '' });
+        const editingPlaceId = ref(null);
 
         // Forms
         const newCategory = ref('');
@@ -670,13 +679,31 @@
           await fetchData();
         };
 
-        const addPlace = async () => {
-          if (!placeForm.name || !placeForm.photoUrl) return;
-          loading.value = true;
-          await addDoc(collection(db, "places"), { name: placeForm.name, photoUrl: placeForm.photoUrl });
+        const resetPlaceForm = () => {
+          editingPlaceId.value = null;
           placeForm.name = '';
           placeForm.photoUrl = '';
+          placeForm.city = '';
+        };
+
+        const savePlace = async () => {
+          if (!placeForm.name || !placeForm.photoUrl || !placeForm.city) return;
+          loading.value = true;
+          const data = { name: placeForm.name, photoUrl: placeForm.photoUrl, city: placeForm.city };
+          if (editingPlaceId.value) {
+            await updateDoc(doc(db, "places", editingPlaceId.value), data);
+          } else {
+            await addDoc(collection(db, "places"), data);
+          }
+          resetPlaceForm();
           await fetchData();
+        };
+
+        const editPlace = (place) => {
+          editingPlaceId.value = place.id;
+          placeForm.name = place.name;
+          placeForm.photoUrl = place.photoUrl;
+          placeForm.city = place.city || '';
         };
 
         const deletePlace = async (id) => {
@@ -704,7 +731,7 @@
           galleryFile, addGalleryPhoto, deleteGalleryPhoto,
           apiKeys, newKeyLabel, newKeyValue, saveApiKey, deleteApiKey,
           heroImages, heroFile, heroRemoveBg, addHeroImage, deleteHeroImage, toggleHeroBg,
-          places, placeForm, addPlace, deletePlace
+          places, placeForm, savePlace, editPlace, deletePlace, resetPlaceForm, editingPlaceId
         }
       }
     }).mount('#app');

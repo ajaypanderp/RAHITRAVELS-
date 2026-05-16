@@ -24,7 +24,8 @@ export const AdminPanel = () => {
 
   // Places State
   const [places, setPlaces] = useState([]);
-  const [placeForm, setPlaceForm] = useState({ name: '', photoUrl: '' });
+  const [placeForm, setPlaceForm] = useState({ name: '', photoUrl: '', city: '' });
+  const [editingPlaceId, setEditingPlaceId] = useState(null);
 
   // Visitors State
   const [visitors, setVisitors] = useState([]);
@@ -329,17 +330,38 @@ export const AdminPanel = () => {
   };
 
   // Place Actions
-  const handleAddPlace = async (e) => {
+  const handleSavePlace = async (e) => {
     e.preventDefault();
-    if (!placeForm.name || !placeForm.photoUrl) return;
+    if (!placeForm.name || !placeForm.photoUrl || !placeForm.city) return;
     try {
-      await addDoc(collection(db, "places"), placeForm);
-      alert("Place Added Successfully!");
-      setPlaceForm({ name: '', photoUrl: '' });
+      const data = { name: placeForm.name, photoUrl: placeForm.photoUrl, city: placeForm.city };
+      if (editingPlaceId) {
+        await updateDoc(doc(db, "places", editingPlaceId), data);
+        alert("Place Updated Successfully!");
+      } else {
+        await addDoc(collection(db, "places"), data);
+        alert("Place Added Successfully!");
+      }
+      setPlaceForm({ name: '', photoUrl: '', city: '' });
+      setEditingPlaceId(null);
       fetchPlaces();
     } catch(err) {
-      alert("Error adding place: " + err.message);
+      alert("Error saving place: " + err.message);
     }
+  };
+
+  const handleEditPlace = (place) => {
+    setEditingPlaceId(place.id);
+    setPlaceForm({
+      name: place.name,
+      photoUrl: place.photoUrl,
+      city: place.city || ''
+    });
+  };
+
+  const cancelEditPlace = () => {
+    setEditingPlaceId(null);
+    setPlaceForm({ name: '', photoUrl: '', city: '' });
   };
 
   const handleDeletePlace = async (id) => {
@@ -611,12 +633,16 @@ export const AdminPanel = () => {
 
       {activeTab === 'places' && (
         <div className="admin-content full-width">
-          <div className="card" style={{ marginBottom: '20px', maxWidth: '500px' }}>
-            <h3>Add Place / Service Location</h3>
-            <form onSubmit={handleAddPlace} className="admin-form">
-              <input type="text" placeholder="Place Name" required value={placeForm.name} onChange={(e) => setPlaceForm({...placeForm, name: e.target.value})} />
+          <div class="card" style={{ marginBottom: '20px', maxWidth: '500px' }}>
+            <h3>{editingPlaceId ? 'Edit Service Location' : 'Add Service Location'}</h3>
+            <form onSubmit={handleSavePlace} className="admin-form">
+              <input type="text" placeholder="Section Name (e.g. Ayodhya Darshan)" required value={placeForm.city} onChange={(e) => setPlaceForm({...placeForm, city: e.target.value})} />
+              <input type="text" placeholder="Place Name (e.g. Ram Mandir)" required value={placeForm.name} onChange={(e) => setPlaceForm({...placeForm, name: e.target.value})} />
               <input type="url" placeholder="Photo URL (Direct Link)" required value={placeForm.photoUrl} onChange={(e) => setPlaceForm({...placeForm, photoUrl: e.target.value})} />
-              <button type="submit" className="primary-btn">Add Place</button>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button type="submit" className="primary-btn" style={{ flex: 1 }}>{editingPlaceId ? 'Update Place' : 'Add Place'}</button>
+                {editingPlaceId && <button type="button" onClick={cancelEditPlace} className="secondary-btn">Cancel</button>}
+              </div>
             </form>
           </div>
           
@@ -626,8 +652,12 @@ export const AdminPanel = () => {
               <div key={p.id} className="car-card">
                 <img src={p.photoUrl} alt={p.name} />
                 <div className="car-info">
+                  <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#2563eb', display: 'block', marginBottom: '5px' }}>{p.city || 'Other'}</span>
                   <h4>{p.name}</h4>
-                  <button onClick={() => handleDeletePlace(p.id)} className="delete-btn" style={{ width: '100%', marginTop: '10px' }}>Delete</button>
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                    <button onClick={() => handleEditPlace(p)} className="edit-btn" style={{ flex: 1 }}>Edit</button>
+                    <button onClick={() => handleDeletePlace(p.id)} className="delete-btn" style={{ flex: 1 }}>Delete</button>
+                  </div>
                 </div>
               </div>
             ))}
