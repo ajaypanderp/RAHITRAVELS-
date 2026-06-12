@@ -1,0 +1,201 @@
+/* Global Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  :root {
+    --hero-bg: #eeeff1;
+    --nav-btn: #474fa0;
+    --brand-color: #2563eb;
+  }
+  
+  /* Main Section */
+  main {
+    background-color: var(--hero-bg);
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+  }
+  
+  .text-section {
+    width: 34vw;
+    padding: 40px;
+  }
+  
+  .text-section h1 {
+    font-size: 3rem;
+    line-height: 3rem;
+    margin-bottom: 30px;
+  }
+  
+  .text-section h1 span {
+    background: linear-gradient(to right, #60a5fa, #2563eb);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  
+  .text-section p {
+    font-size: 1rem;
+    color: gray;
+  }
+  
+  .book-now-btn {
+    margin-top: 30px;
+    background: #2563eb;
+    color: white;
+    padding: 12px 24px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+    transition: transform 0.2s, background 0.3s;
+  }
+  
+  .book-now-btn:hover {
+    background: #1d4ed8;
+    transform: translateY(-2px);
+  }
+  
+  /* App Button Styling */
+  .app-links {
+    display: flex;
+    gap: 20px;
+    margin-top: 40px;
+  }
+  
+  .app-links button {
+    border: none;
+    background-color: white;
+    padding: 10px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .app-links button:hover {
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15), 0 3px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
+  
+  .app-links button:active {
+    box-shadow: 0 3px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
+    transform: translateY(1px);
+  }
+  
+  .app-btn {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    gap: 12px;
+  }
+  
+  .app-logo img {
+    width: 16px;
+  }
+  
+  .app-text p {
+    color: grey;
+    font-size: 0.7rem;
+    margin-bottom: 4px;
+  }
+  
+  /* Car Image Styling */
+  .hero-image-container {
+    position: relative;
+  }
+  .blue-box {
+    width: 50vw;
+    height: 80vh;
+    background: linear-gradient(to right, #93c5fd, #60a5fa, #3b82f6, #2563eb, #93c5fd);
+    background-size: 300% 300%; 
+    border-radius: 4px;
+    border-top-left-radius: 40px;
+    border-top-right-radius: 40px;
+    position: relative;
+    z-index: 1;
+    /* Animation*/
+    animation: gradient-wave 8s infinite cubic-bezier(0.55, 0.055, 0.675, 0.19);
+  }
+  
+  @keyframes gradient-wave {
+    0% {
+      background-position: 0% 50%; 
+    }
+    50% {
+      background-position: 100% 50%; 
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+  
+  .car-image {
+    position: absolute;
+    top: 50px;
+    left: 40%;
+    transform: translateX(-50%);
+    z-index: 2;
+    width: 60vw;
+  }
+  
+  /* Mobile Responsiveness */
+  @media (max-width: 768px) {
+    main {
+      flex-wrap: wrap-reverse;
+      height: 90vh;
+    }
+  
+    .hero-image-container {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+  
+    .blue-box {
+      width: 80%;
+      height: 40vh;
+      margin: 20px auto;
+    }
+  
+    .car-image {
+      width: 100%;
+      top: 30%;
+      left: 50%;
+    }
+  
+    .text-section {
+      width: 96%;
+      text-align: center;
+      padding: 10px 20px;
+    }
+  
+    .text-section h1 {
+      font-size: 2.2rem;
+      line-height: 2.5rem;
+      margin-bottom: 10px;
+    }
+  
+    .text-section p {
+      font-size: 0.9rem;
+    }
+  
+    .app-text p {
+      font-size: 0.7rem;
+    }
+  
+    .app-links {
+      gap: 15px;
+      justify-content: center;
+      padding-bottom: 50px;
+    }
+  }
+  
+  
