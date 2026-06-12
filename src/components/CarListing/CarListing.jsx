@@ -16,7 +16,21 @@ export const CarListing = () => {
     const fetchCars = async () => {
       try {
         const querySnapshot = await getDocs(collection(db, "cars"));
-        setCars(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        const carList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const getCarSortOrder = (car) => {
+          if (car.serialNo !== undefined && car.serialNo !== null && car.serialNo !== '') {
+            return Number(car.serialNo);
+          }
+          const cat = (car.category || '').toLowerCase();
+          if (cat.includes('sedan')) return 1000;
+          if (cat.includes('hatchback')) return 2000;
+          if (cat.includes('suv')) return 3000;
+          if (cat.includes('muv')) return 4000;
+          if (cat.includes('bus')) return 5000;
+          return 99999;
+        };
+        carList.sort((a, b) => getCarSortOrder(a) - getCarSortOrder(b));
+        setCars(carList);
       } catch (err) {
         console.error("Error fetching cars:", err);
       }

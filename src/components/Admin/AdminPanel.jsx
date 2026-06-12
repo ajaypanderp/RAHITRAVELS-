@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db, uploadToCloudinary } from '../../firebaseConfig';
-import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import './AdminPanel.css';
 
 export const AdminPanel = () => {
@@ -16,8 +16,13 @@ export const AdminPanel = () => {
   
   // Form State for Add/Edit Car
   const [editingCarId, setEditingCarId] = useState(null);
-  const [formData, setFormData] = useState({ name: '', price: '', category: '', seats: '5', fuelType: 'Petrol', features: '', imageFile: null, existingImage: '', galleryUrls: ['', '', '', '', '', '', ''], galleryFiles: [null, null, null, null, null, null, null] });
+  const [formData, setFormData] = useState({ name: '', price: '', category: '', seats: '5', fuelType: 'Petrol', features: '', serialNo: '', imageFile: null, existingImage: '', galleryUrls: ['', '', '', '', '', '', ''], galleryFiles: [null, null, null, null, null, null, null] });
   const [uploading, setUploading] = useState(false);
+  const [conflictCar, setConflictCar] = useState(null);
+  
+  // WhatsApp Settings State
+  const [whatsappSettings, setWhatsappSettings] = useState({ enabled: false, phone: '', apiKey: '' });
+  const [savingWhatsapp, setSavingWhatsapp] = useState(false);
   
   // Users State
   const [users, setUsers] = useState([]);
@@ -57,7 +62,34 @@ export const AdminPanel = () => {
 
   const fetchCars = async () => {
     const querySnapshot = await getDocs(collection(db, "cars"));
-    setCars(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    const fetchedCars = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    const getCarSortOrder = (car) => {
+      if (car.serialNo !== undefined && car.serialNo !== null && car.serialNo !== '') {
+        return Number(car.serialNo);
+      }
+      const cat = (car.category || '').toLowerCase();
+      if (cat.includes('sedan')) return 1000;
+      if (cat.includes('hatchback')) return 2000;
+      if (cat.includes('suv')) return 3000;
+      if (cat.includes('muv')) return 4000;
+      if (cat.includes('bus')) return 5000;
+      return 99999;
+    };
+
+    fetchedCars.sort((a, b) => getCarSortOrder(a) - getCarSortOrder(b));
+    setCars(fetchedCars);
+  };
+
+  const fetchWhatsappSettings = async () => {
+    try {
+      const docSnap = await getDoc(doc(db, "settings", "whatsapp"));
+      if (docSnap.exists()) {
+        setWhatsappSettings(docSnap.data());
+      }
+    } catch (err) {
+      console.error("Error fetching WhatsApp settings:", err);
+    }
   };
 
   const fetchBookings = async () => {
@@ -132,6 +164,7 @@ export const AdminPanel = () => {
       fetchUsers();
       fetchPlaces();
       fetchVisitors();
+      fetchWhatsappSettings();
     }
   }, [isAuthenticated]);
 
@@ -180,6 +213,17 @@ export const AdminPanel = () => {
   // Car Actions
   const handleSaveCar = async (e) => {
     e.preventDefault();
+    
+    // Check for duplicate serial number
+    const enteredSerial = formData.serialNo !== '' ? Number(formData.serialNo) : '';
+    if (enteredSerial !== '' && enteredSerial !== 0) {
+      const conflict = cars.find(c => Number(c.serialNo) === enteredSerial && c.id !== editingCarId);
+      if (conflict) {
+        setConflictCar(conflict);
+        return;
+      }
+    }
+
     setUploading(true);
     try {
       let imageUrl = formData.existingImage;
@@ -205,7 +249,8 @@ export const AdminPanel = () => {
         fuelType: formData.fuelType,
         features: formData.features.split(',').map(f => f.trim()).filter(f => f !== ''),
         galleryUrls: finalGalleryUrls,
-        image: imageUrl
+        image: imageUrl,
+        serialNo: formData.serialNo !== '' ? Number(formData.serialNo) : ''
       };
 
       if (editingCarId) {
@@ -216,7 +261,7 @@ export const AdminPanel = () => {
         alert("Car Added Successfully!");
       }
 
-      setFormData({ name: '', price: '', category: categories.length > 0 ? categories[0].name : '', seats: '5', fuelType: 'Petrol', features: '', imageFile: null, existingImage: '', galleryUrls: ['', '', '', '', '', '', ''], galleryFiles: [null, null, null, null, null, null, null] });
+      setFormData({ name: '', price: '', category: categories.length > 0 ? categories[0].name : '', seats: '5', fuelType: 'Petrol', features: '', serialNo: '', imageFile: null, existingImage: '', galleryUrls: ['', '', '', '', '', '', ''], galleryFiles: [null, null, null, null, null, null, null] });
       setEditingCarId(null);
       fetchCars();
     } catch(err) {
@@ -234,6 +279,7 @@ export const AdminPanel = () => {
       seats: car.seats || '5',
       fuelType: car.fuelType || 'Petrol',
       features: car.features ? car.features.join(', ') : '',
+      serialNo: car.serialNo !== undefined ? car.serialNo : '',
       imageFile: null,
       existingImage: car.image,
       galleryUrls: car.galleryUrls ? [...car.galleryUrls, '', '', '', '', '', '', ''].slice(0, 7) : ['', '', '', '', '', '', ''],
@@ -250,7 +296,20 @@ export const AdminPanel = () => {
 
   const cancelEdit = () => {
     setEditingCarId(null);
-    setFormData({ name: '', price: '', category: categories.length > 0 ? categories[0].name : '', seats: '5', fuelType: 'Petrol', features: '', imageFile: null, existingImage: '', galleryUrls: ['', '', '', '', '', '', ''], galleryFiles: [null, null, null, null, null, null, null] });
+    setFormData({ name: '', price: '', category: categories.length > 0 ? categories[0].name : '', seats: '5', fuelType: 'Petrol', features: '', serialNo: '', imageFile: null, existingImage: '', galleryUrls: ['', '', '', '', '', '', ''], galleryFiles: [null, null, null, null, null, null, null] });
+  };
+
+  // WhatsApp Alert saving Action
+  const handleSaveWhatsappSettings = async (e) => {
+    e.preventDefault();
+    setSavingWhatsapp(true);
+    try {
+      await setDoc(doc(db, "settings", "whatsapp"), whatsappSettings);
+      alert("WhatsApp Notification Settings Saved successfully!");
+    } catch (err) {
+      alert("Error saving settings: " + err.message);
+    }
+    setSavingWhatsapp(false);
   };
 
   // Booking Actions
@@ -410,6 +469,7 @@ export const AdminPanel = () => {
           <button className={activeTab === 'hero' ? 'active-tab' : ''} onClick={() => setActiveTab('hero')}>Hero Manager</button>
           <button className={activeTab === 'users' ? 'active-tab' : ''} onClick={() => setActiveTab('users')}>Users</button>
           <button className={activeTab === 'places' ? 'active-tab' : ''} onClick={() => setActiveTab('places')}>Places</button>
+          <button className={activeTab === 'whatsapp' ? 'active-tab' : ''} onClick={() => setActiveTab('whatsapp')}>WhatsApp Alerts</button>
           <button className={activeTab === 'analytics' ? 'active-tab' : ''} onClick={() => setActiveTab('analytics')}>Analytics</button>
         </div>
       </div>
@@ -454,6 +514,13 @@ export const AdminPanel = () => {
                   <option value="CNG">CNG</option>
                   <option value="EV">EV (Electric)</option>
                 </select>
+                <input 
+                  type="number" 
+                  placeholder="Serial Number (e.g. 1 for first)" 
+                  value={formData.serialNo} 
+                  onChange={(e) => setFormData({...formData, serialNo: e.target.value})} 
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', marginBottom: '10px' }}
+                />
                 <textarea 
                   placeholder="Point features (comma separated, e.g. AC, Bluetooth, Sunroof)" 
                   value={formData.features} 
@@ -510,6 +577,7 @@ export const AdminPanel = () => {
                     <h4>{car.name} ({car.seats || '5'} Seater)</h4>
                     <span className="car-badge">{car.category}</span>
                     <span className="car-badge" style={{background: '#10b981', marginLeft: '5px'}}>{car.fuelType || 'Petrol'}</span>
+                    <span className="car-badge" style={{background: '#6b7280', color: 'white', marginLeft: '5px'}}>Order: {car.serialNo !== undefined && car.serialNo !== '' ? car.serialNo : 'N/A'}</span>
                     <p>{car.pricePerKm}</p>
                     <div className="car-actions">
                       <button onClick={() => handleEditCar(car)} className="edit-btn">Edit</button>
@@ -723,6 +791,64 @@ export const AdminPanel = () => {
         </div>
       )}
 
+      {activeTab === 'whatsapp' && (
+        <div className="admin-content full-width">
+          <div className="card" style={{ maxWidth: '600px', margin: '0 auto', padding: '25px' }}>
+            <h3>WhatsApp Booking Notifications</h3>
+            <p style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '20px', lineHeight: '1.5' }}>
+              Receive a WhatsApp notification directly to your phone instantly whenever a new booking is submitted on the website. This service uses the completely free <strong>CallMeBot API</strong>.
+            </p>
+            
+            <div className="alert-info" style={{ background: '#f0f9ff', borderLeft: '4px solid #0284c7', padding: '15px', borderRadius: '4px', marginBottom: '25px', fontSize: '0.9rem' }}>
+              <h4 style={{ color: '#0369a1', margin: '0 0 8px 0', fontWeight: 'bold' }}>How to setup for FREE:</h4>
+              <ol style={{ margin: 0, paddingLeft: '20px', color: '#334155' }}>
+                <li style={{ marginBottom: '6px' }}>Add the phone number <strong>+34 621 07 36 12</strong> (or the current CallMeBot WhatsApp number) to your phone contacts.</li>
+                <li style={{ marginBottom: '6px' }}>Send a WhatsApp message saying: <strong>I allow callmebot to send me messages</strong> to that number.</li>
+                <li style={{ marginBottom: '6px' }}>Wait for the reply from the bot with your unique <strong>API Key</strong>.</li>
+                <li>Enter your phone number (with country code, e.g. +91XXXXXXXXXX) and the API key below.</li>
+              </ol>
+            </div>
+
+            <form onSubmit={handleSaveWhatsappSettings} className="admin-form">
+              <label className="checkbox-label" style={{ fontWeight: 'bold', marginBottom: '20px' }}>
+                <input 
+                  type="checkbox" 
+                  checked={whatsappSettings.enabled || false} 
+                  onChange={(e) => setWhatsappSettings({ ...whatsappSettings, enabled: e.target.checked })}
+                />
+                Enable Instant WhatsApp Booking Alerts
+              </label>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.9rem', fontWeight: 'bold', color: '#475569' }}>Admin Phone Number (with country code)</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. +919876543210" 
+                  value={whatsappSettings.phone || ''} 
+                  onChange={(e) => setWhatsappSettings({ ...whatsappSettings, phone: e.target.value })}
+                  required={whatsappSettings.enabled}
+                />
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '5px', fontSize: '0.9rem', fontWeight: 'bold', color: '#475569' }}>CallMeBot API Key</label>
+                <input 
+                  type="password" 
+                  placeholder="Enter API Key from WhatsApp" 
+                  value={whatsappSettings.apiKey || ''} 
+                  onChange={(e) => setWhatsappSettings({ ...whatsappSettings, apiKey: e.target.value })}
+                  required={whatsappSettings.enabled}
+                />
+              </div>
+
+              <button type="submit" disabled={savingWhatsapp} className="primary-btn" style={{ width: '100%', padding: '12px' }}>
+                {savingWhatsapp ? 'Saving Settings...' : 'Save WhatsApp Settings'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {activeTab === 'analytics' && (
         <div className="admin-content full-width">
           <h3>Visitor Analytics</h3>
@@ -751,6 +877,32 @@ export const AdminPanel = () => {
               <h4 style={{ color: '#64748b', fontSize: '0.9rem', marginBottom: '10px' }}>Lifetime</h4>
               <p style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1e293b' }}>{visitorStats.lifetime}</p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {conflictCar && (
+        <div className="modal-overlay" style={{ zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-content" style={{ maxWidth: '400px', width: '90%', padding: '25px', textAlign: 'center', borderRadius: '12px', background: 'white', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+            <h3 style={{ marginBottom: '15px', color: '#ef4444' }}>⚠️ Serial Number Conflict</h3>
+            <p style={{ color: '#64748b', fontSize: '0.95rem', marginBottom: '20px' }}>
+              This serial number is already assigned to another vehicle in your active fleet list.
+            </p>
+            <div style={{ marginBottom: '20px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <img src={conflictCar.image} alt={conflictCar.name} style={{ width: '80px', height: '60px', objectFit: 'cover', borderRadius: '6px' }} />
+              <div style={{ textAlign: 'left' }}>
+                <h4 style={{ margin: 0, color: '#1e293b' }}>{conflictCar.name}</h4>
+                <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#64748b' }}>Serial No: {conflictCar.serialNo}</p>
+              </div>
+            </div>
+            <button 
+              type="button" 
+              onClick={() => setConflictCar(null)} 
+              className="primary-btn"
+              style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', background: '#3b82f6', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+            >
+              Change Serial Number
+            </button>
           </div>
         </div>
       )}

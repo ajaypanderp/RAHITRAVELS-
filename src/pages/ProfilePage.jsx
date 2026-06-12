@@ -12,6 +12,10 @@ export const ProfilePage = () => {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [editCount, setEditCount] = useState(0);
+  const [adminPhone, setAdminPhone] = useState('');
+
+  const isLocked = false;
 
   useEffect(() => {
     if (!currentUser) {
@@ -19,26 +23,51 @@ export const ProfilePage = () => {
       return;
     }
     const fetchProfile = async () => {
-      const docRef = doc(db, 'users', currentUser.uid);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setName(data.name || '');
-        setPhone(data.phone || '');
+      try {
+        const docRef = doc(db, 'users', currentUser.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setName(data.name || '');
+          setPhone(data.phone || '');
+          setEditCount(0);
+        }
+      } catch (err) {
+        console.error("Error fetching profile:", err);
+      }
+    };
+    const fetchAdminPhone = async () => {
+      try {
+        const settingsSnap = await getDoc(doc(db, "settings", "whatsapp"));
+        if (settingsSnap.exists()) {
+          setAdminPhone(settingsSnap.data().phone || '');
+        }
+      } catch (err) {
+        console.error("Error fetching admin phone:", err);
       }
     };
     fetchProfile();
+    fetchAdminPhone();
   }, [currentUser, navigate]);
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+
+    if (!name.trim() || !phone.trim()) {
+      setMessage('Name and Phone number cannot be empty.');
+      return;
+    }
+
     setLoading(true);
     setMessage('');
     try {
       await updateDoc(doc(db, 'users', currentUser.uid), {
         name,
-        phone
+        phone,
+        editCount: 0,
+        isLocked: false
       });
+      setEditCount(0);
       setMessage('Profile updated successfully!');
     } catch (error) {
       setMessage('Failed to update profile: ' + error.message);
@@ -58,6 +87,7 @@ export const ProfilePage = () => {
         </div>
       )}
 
+
       <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div>
           <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>Email Address</label>
@@ -76,7 +106,8 @@ export const ProfilePage = () => {
             type="text" 
             value={name} 
             onChange={(e) => setName(e.target.value)} 
-            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+            disabled={isLocked}
+            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db', backgroundColor: isLocked ? '#f3f4f6' : 'white', color: isLocked ? '#6b7280' : 'black' }}
           />
         </div>
 
@@ -86,17 +117,37 @@ export const ProfilePage = () => {
             type="tel" 
             value={phone} 
             onChange={(e) => setPhone(e.target.value)} 
-            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+            disabled={isLocked}
+            style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db', backgroundColor: isLocked ? '#f3f4f6' : 'white', color: isLocked ? '#6b7280' : 'black' }}
           />
         </div>
 
-        <button 
-          type="submit" 
-          disabled={loading}
-          style={{ padding: '14px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', marginTop: '10px' }}
-        >
-          {loading ? 'Saving...' : 'Save Changes'}
-        </button>
+        {isLocked ? (
+          <div style={{ padding: '15px', backgroundColor: '#fef3c7', color: '#d97706', borderRadius: '8px', marginTop: '10px', fontSize: '0.9rem', border: '1px solid #fcd34d' }}>
+            <p style={{ margin: '0 0 10px 0', fontWeight: 'bold' }}>🔒 Profile details are locked and bound to your account.</p>
+            <p style={{ margin: '0 0 10px 0' }}>To change your registered Name or Phone number, request the owner.</p>
+            <button 
+              type="button"
+              onClick={() => {
+                const message = `Hello, I would like to request a profile details change (Name/Number) for my account. My current details are:\nName: ${name}\nPhone: ${phone}`;
+                const encodedMsg = encodeURIComponent(message);
+                const phoneNum = adminPhone || "+919876543210";
+                window.open(`https://wa.me/${phoneNum.replace('+', '')}?text=${encodedMsg}`, '_blank');
+              }}
+              style={{ padding: '8px 16px', backgroundColor: '#d97706', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+            >
+              💬 Request Owner via WhatsApp
+            </button>
+          </div>
+        ) : (
+          <button 
+            type="submit" 
+            disabled={loading}
+            style={{ padding: '14px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer', marginTop: '10px' }}
+          >
+            {loading ? 'Saving...' : 'Save Changes'}
+          </button>
+        )}
       </form>
 
       <div style={{ marginTop: '40px', paddingTop: '20px', borderTop: '1px solid #e5e7eb' }}>

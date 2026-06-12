@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db } from '../../firebaseConfig';
-import { collection, getDocs, limit, query } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { BookingModal } from '../Booking/BookingModal';
 
 export const CarSlideshow = () => {
@@ -13,11 +13,24 @@ export const CarSlideshow = () => {
   useEffect(() => {
     const fetchCars = async () => {
       try {
-        const q = query(collection(db, "cars"), limit(10));
-        const snapshot = await getDocs(q);
-        const fetchedCars = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        if (fetchedCars.length >= 1) {
-          setCars(fetchedCars);
+        const querySnapshot = await getDocs(collection(db, "cars"));
+        const fetchedCars = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const getCarSortOrder = (car) => {
+          if (car.serialNo !== undefined && car.serialNo !== null && car.serialNo !== '') {
+            return Number(car.serialNo);
+          }
+          const cat = (car.category || '').toLowerCase();
+          if (cat.includes('sedan')) return 1000;
+          if (cat.includes('hatchback')) return 2000;
+          if (cat.includes('suv')) return 3000;
+          if (cat.includes('muv')) return 4000;
+          if (cat.includes('bus')) return 5000;
+          return 99999;
+        };
+        fetchedCars.sort((a, b) => getCarSortOrder(a) - getCarSortOrder(b));
+        const limitedCars = fetchedCars.slice(0, 12);
+        if (limitedCars.length >= 1) {
+          setCars(limitedCars);
         }
       } catch (err) {
         console.error("Error fetching cars for slideshow:", err);

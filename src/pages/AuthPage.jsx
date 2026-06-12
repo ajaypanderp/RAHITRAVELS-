@@ -201,8 +201,9 @@ export const AuthPage = () => {
               <button type="submit" className="auth-submit-btn" disabled={loading}>
                 {loading ? 'Logging in...' : 'Get Started'}
               </button>
-              <div className="auth-method-toggle">
-                <span onClick={() => setStep(1)}>Back</span>
+              <div className="auth-method-toggle" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span onClick={() => setStep(1)} style={{ cursor: 'pointer' }}>Back</span>
+                <span onClick={() => setStep(3)} style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 'bold' }}>Create Account</span>
               </div>
             </form>
           )}
@@ -246,8 +247,9 @@ export const AuthPage = () => {
               <button type="submit" className="auth-submit-btn" disabled={loading}>
                 {loading ? 'Creating...' : 'Create Account'}
               </button>
-              <div className="auth-method-toggle">
-                <span onClick={() => setStep(1)}>Back</span>
+              <div className="auth-method-toggle" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span onClick={() => setStep(1)} style={{ cursor: 'pointer' }}>Back</span>
+                <span onClick={() => setStep(2)} style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 'bold' }}>Sign In</span>
               </div>
             </form>
           )}

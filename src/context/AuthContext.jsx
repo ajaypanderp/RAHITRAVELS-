@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db } from '../firebaseConfig';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { 
   onAuthStateChanged, 
   createUserWithEmailAndPassword, 
@@ -38,9 +39,11 @@ export const AuthProvider = ({ children }) => {
   // Check if user exists
   const checkUserExists = async (email) => {
     try {
-      const methods = await fetchSignInMethodsForEmail(auth, email);
-      return methods.length > 0;
+      const q = query(collection(db, "users"), where("email", "==", email));
+      const querySnapshot = await getDocs(q);
+      return !querySnapshot.empty;
     } catch (error) {
+      console.error("Firestore user check failed:", error);
       return false;
     }
   };

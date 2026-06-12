@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { db } from '../../firebaseConfig';
-import { collection, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, getDocs, getDoc, doc } from 'firebase/firestore';
 import { useAuth } from '../../context/AuthContext';
 import './BookingForm.css';
 
 export const BookingForm = ({ preSelectedCar, onClose }) => {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -23,12 +25,29 @@ export const BookingForm = ({ preSelectedCar, onClose }) => {
   const [availableCars, setAvailableCars] = useState([]);
   const [selectedCarDetails, setSelectedCarDetails] = useState(null);
   const [currentDisplayImage, setCurrentDisplayImage] = useState('');
+  
+  const [userProfile, setUserProfile] = useState(null);
+  const [adminPhone, setAdminPhone] = useState('');
+  const [showLockModal, setShowLockModal] = useState(false);
 
   useEffect(() => {
     const fetchCars = async () => {
       try {
         const querySnapshot = await getDocs(collection(db, "cars"));
         const carList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const getCarSortOrder = (car) => {
+          if (car.serialNo !== undefined && car.serialNo !== null && car.serialNo !== '') {
+            return Number(car.serialNo);
+          }
+          const cat = (car.category || '').toLowerCase();
+          if (cat.includes('sedan')) return 1000;
+          if (cat.includes('hatchback')) return 2000;
+          if (cat.includes('suv')) return 3000;
+          if (cat.includes('muv')) return 4000;
+          if (cat.includes('bus')) return 5000;
+          return 99999;
+        };
+        carList.sort((a, b) => getCarSortOrder(a) - getCarSortOrder(b));
         setAvailableCars(carList);
         
         // If there's a pre-selected car, find its details
@@ -43,6 +62,57 @@ export const BookingForm = ({ preSelectedCar, onClose }) => {
     };
     fetchCars();
   }, [preSelectedCar]);
+
+  useEffect(() => {
+    if (currentUser) {
+      const fetchUserProfile = async () => {
+        try {
+          const docRef = doc(db, 'users', currentUser.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setUserProfile(data);
+            setFormData(prev => ({
+              ...prev,
+              name: data.name || prev.name,
+              mobile: data.phone || prev.mobile,
+              email: data.email || currentUser.email || prev.email
+            }));
+          } else {
+            setUserProfile(null);
+            setFormData(prev => ({
+              ...prev,
+              name: currentUser.displayName || prev.name,
+              mobile: currentUser.phoneNumber || prev.mobile,
+              email: currentUser.email || prev.email
+            }));
+          }
+        } catch (err) {
+          console.error("Error fetching user profile:", err);
+        }
+      };
+      fetchUserProfile();
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    const fetchAdminPhone = async () => {
+      try {
+        const settingsSnap = await getDoc(doc(db, "settings", "whatsapp"));
+        if (settingsSnap.exists()) {
+          setAdminPhone(settingsSnap.data().phone || '');
+        }
+      } catch (err) {
+        console.error("Error fetching admin phone:", err);
+      }
+    };
+    fetchAdminPhone();
+  }, []);
+
+  const handleFieldClick = (e) => {
+    e.preventDefault();
+    setShowLockModal(true);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -70,6 +140,31 @@ export const BookingForm = ({ preSelectedCar, onClose }) => {
         userEmail: currentUser.email || '',
         createdAt: serverTimestamp(),
       });
+
+      // Send WhatsApp notification if enabled
+      try {
+        const settingsSnap = await getDoc(doc(db, "settings", "whatsapp"));
+        if (settingsSnap.exists()) {
+          const settings = settingsSnap.data();
+          if (settings.enabled && settings.phone && settings.apiKey) {
+            const message = `🚨 *New Booking Alert* 🚨\n\n` +
+              `👤 *Name:* ${formData.name}\n` +
+              `📞 *Mobile:* ${formData.mobile}\n` +
+              `📧 *Email:* ${formData.email}\n` +
+              `🚗 *Car:* ${formData.car}\n` +
+              `📍 *Route:* ${formData.from} to ${formData.to}\n` +
+              `📅 *Date/Time:* ${formData.date} at ${formData.time}`;
+            
+            const encodedMsg = encodeURIComponent(message);
+            const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(settings.phone)}&text=${encodedMsg}&apikey=${encodeURIComponent(settings.apiKey)}`;
+            
+            await fetch(url, { mode: 'no-cors' });
+          }
+        }
+      } catch (err) {
+        console.error("Failed to send WhatsApp notification:", err);
+      }
+
       setSuccess(true);
       setTimeout(() => {
         if (onClose) onClose();
@@ -189,6 +284,7 @@ END:VCALENDAR`;
         <h3>Booking Details</h3>
         <form onSubmit={handleSubmit} className="booking-form">
           <input type="text" name="name" placeholder="Your Full Name" value={formData.name} onChange={handleChange} required />
+
           <input type="tel" name="mobile" placeholder="Mobile Number" value={formData.mobile} onChange={handleChange} required />
           
           <div className="flex-row">
@@ -212,6 +308,50 @@ END:VCALENDAR`;
             {loading ? 'Processing...' : 'Confirm Booking'}
           </button>
         </form>
+
+        {showLockModal && (
+          <div className="modal-overlay" style={{ zIndex: 10000, display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.5)' }}>
+            <div className="modal-content" style={{ maxWidth: '400px', width: '90%', padding: '25px', textAlign: 'center', borderRadius: '12px', background: 'white', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}>
+              <h3 style={{ marginBottom: '15px', color: '#1e293b' }}>🔐 Details Locked</h3>
+              <p style={{ color: '#64748b', fontSize: '0.95rem', marginBottom: '20px', lineHeight: '1.5' }}>
+                These details are locked and bound to your account. To change them, please make a new account or request the owner.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <button 
+                  onClick={() => {
+                    const message = `Hello, I would like to request a change to my profile details (Name/Number) on the website.`;
+                    const encodedMsg = encodeURIComponent(message);
+                    const phoneNum = adminPhone || "+919876543210";
+                    window.open(`https://wa.me/${phoneNum.replace('+', '')}?text=${encodedMsg}`, '_blank');
+                    setShowLockModal(false);
+                  }}
+                  className="book-btn"
+                  style={{ background: '#22c55e', color: 'white', padding: '12px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                  💬 WhatsApp (Slow, depending on owner seen)
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowLockModal(false);
+                    if (onClose) onClose();
+                    navigate('/profile');
+                  }}
+                  className="book-btn"
+                  style={{ background: '#2563eb', color: 'white', padding: '12px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                  👤 Self (Fast, by you)
+                </button>
+                <button 
+                  onClick={() => setShowLockModal(false)}
+                  className="secondary-btn"
+                  style={{ padding: '12px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', background: '#e2e8f0', color: '#334155', marginTop: '5px' }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
