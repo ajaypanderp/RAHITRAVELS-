@@ -1,6 +1,7 @@
+/* ─── Section ────────────────────────────────────────────────── */
 .places-section {
-  padding: 60px 20px;
-  background: var(--bg-light, #f8fafc);
+  padding: 70px 20px 80px;
+  background: #f0f6ff;
   font-family: 'Outfit', 'Inter', sans-serif;
 }
 
@@ -9,13 +10,14 @@
   margin: 0 auto;
 }
 
+/* ─── City block ─────────────────────────────────────────────── */
 .city-section {
-  margin-bottom: 60px;
+  margin-bottom: 70px;
 }
 
 .city-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 36px;
 }
 
 .city-subtitle {
@@ -30,24 +32,26 @@
   height: 2px;
   width: 40px;
   background: var(--primary-color, #2563eb);
+  border-radius: 2px;
 }
 
 .city-subtitle-text {
   color: var(--primary-color, #2563eb);
   font-weight: 600;
   letter-spacing: 2px;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   text-transform: uppercase;
 }
 
 .city-title {
-  font-size: 2.5rem;
+  font-size: 2.4rem;
   color: #0f172a;
   margin: 0;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: -0.5px;
 }
 
-/* Carousel wrapper */
+/* ─── Carousel row (arrows + clipping box) ───────────────────── */
 .carousel-container {
   position: relative;
   display: flex;
@@ -55,22 +59,24 @@
   width: 100%;
 }
 
+/* Arrow buttons */
 .carousel-button {
+  flex-shrink: 0;
   background: white;
-  border: 1px solid #e2e8f0;
+  border: 1.5px solid #dbeafe;
   border-radius: 50%;
-  width: 45px;
-  height: 45px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
   position: absolute;
-  top: 45%;
+  top: 50%;
   transform: translateY(-50%);
-  z-index: 10;
-  transition: all 0.3s ease;
+  z-index: 20;
+  transition: background 0.25s, color 0.25s, box-shadow 0.25s, transform 0.25s;
   color: var(--primary-color, #2563eb);
   font-size: 1.5rem;
 }
@@ -78,76 +84,58 @@
 .carousel-button:hover {
   background: var(--primary-color, #2563eb);
   color: white;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
   transform: translateY(-50%) scale(1.1);
 }
 
-.carousel-button.prev {
-  left: -20px;
-}
+.carousel-button.prev { left: -22px; }
+.carousel-button.next { right: -22px; }
 
-.carousel-button.next {
-  right: -20px;
-}
-
-/* Places Grid */
-.places-window {
-  overflow-x: auto;
-  width: 100%;
-  padding-bottom: 20px; /* space for box-shadow */
-  scroll-behavior: smooth;
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-  cursor: grab;
-  user-select: none;
-}
-
-.places-window.active {
-  cursor: grabbing;
-  scroll-behavior: auto;
-}
-
-.places-window::-webkit-scrollbar {
-  display: none;
-}
-
-.places-grid {
-  display: flex;
-  gap: 30px;
-  width: max-content; /* Allows it to expand beyond window if sliding */
-  min-width: 100%;
-}
-
-.places-grid.centered {
-  justify-content: center;
-  width: 100%;
-}
-
-.place-card-wrapper {
-  flex-shrink: 0;
-  width: calc(33.333% - 20px); /* Exactly three cards on desktop */
-}
-
-.place-card {
-  border-radius: 12px;
+/* ─── Clipping box ───────────────────────────────────────────── */
+.carousel-outer {
   overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+  width: 100%;
+  /* tiny vertical breathing room so card shadows aren't clipped */
+  padding: 6px 0 10px;
+}
+
+/* ─── Sliding track (width set inline by JS) ─────────────────── */
+.places-track {
+  display: flex;
+  /* JS sets width = (renderCount / visibleCount) * 100% of outer */
+  /* JS sets transform for sliding via inline style              */
+}
+
+/* ─── Each card slot (width set inline by JS) ───────────────── */
+.place-card-slot {
+  /* JS sets width = 100% / visibleCount of outer */
+  flex-shrink: 0;
+  padding: 0 12px;
+  box-sizing: border-box;
+}
+
+/* ─── Card ───────────────────────────────────────────────────── */
+.place-card {
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(37, 99, 235, 0.08), 0 1px 4px rgba(0, 0, 0, 0.05);
   background: white;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   cursor: pointer;
-  border: 1px solid #f1f5f9;
+  border: 1px solid #e2eeff;
   height: 100%;
   display: flex;
   flex-direction: column;
 }
 
 .place-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  transform: translateY(-6px);
+  box-shadow: 0 16px 36px rgba(37, 99, 235, 0.16), 0 4px 8px rgba(0, 0, 0, 0.07);
 }
 
-/* 16:9 Aspect Ratio */
+/* Image – 4:3 ratio, full cover */
 .place-img-container {
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 4 / 3;
   width: 100%;
   overflow: hidden;
   position: relative;
@@ -157,69 +145,69 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.45s ease;
 }
 
+.place-card:hover .place-img {
+  transform: scale(1.06);
+}
+
+/* Name bar */
 .place-info {
-  padding: 20px;
+  padding: 16px 20px 18px;
   text-align: center;
   flex-grow: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: white;
 }
 
 .place-name {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   color: #1e293b;
   margin: 0;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.2px;
 }
 
-.slideshow-dots {
-  position: absolute;
-  bottom: 10px;
-  left: 0;
-  right: 0;
+/* ─── Dot indicators ─────────────────────────────────────────── */
+.carousel-dots {
   display: flex;
   justify-content: center;
-  gap: 5px;
-  z-index: 2;
+  gap: 8px;
+  margin-top: 22px;
 }
 
-.slide-dot {
-  width: 6px;
-  height: 6px;
+.carousel-dot {
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.5);
-  transition: background 0.3s ease;
+  background: #bfdbfe;
+  cursor: pointer;
+  transition: background 0.25s, transform 0.25s;
 }
 
-.slide-dot.active {
-  background: #fff;
+.carousel-dot.active {
+  background: var(--primary-color, #2563eb);
+  transform: scale(1.4);
 }
 
-/* Responsive Rules */
-@media (max-width: 1024px) {
-  .place-card-wrapper {
-    width: calc(50% - 15px) !important; /* 2 per row on tablets */
-  }
-}
-
+/* ─── Mobile ─────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .places-grid {
-    gap: 15px;
+  .places-section {
+    padding: 48px 16px 56px;
   }
-  
+
+  .city-title {
+    font-size: 1.8rem;
+  }
+
   .carousel-button {
-    display: none; /* Hide arrows on mobile, rely on swipe */
+    display: none;
   }
-  
-  .places-window {
-    scroll-snap-type: x mandatory;
-  }
-  
-  .place-card-wrapper {
-    width: 100% !important; /* exactly one card on mobile */
-    scroll-snap-align: center;
+
+  .place-card-slot {
+    padding: 0 6px;
   }
 }
