@@ -1,141 +1,142 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useCallback,
+} from 'react';
 import { db } from '../../firebaseConfig';
 import { collection, getDocs } from 'firebase/firestore';
 import './Places.css';
 
+/* ─── Fallback data ──────────────────────────────────────────── */
 const defaultPlaces = [
-  { id: 'default1', city: 'Ayodhya Darshan', name: 'Ram Mandir', photoUrls: ['https://images.unsplash.com/photo-1706692997103-6cb6388dece2?q=80&w=800&auto=format&fit=crop'] },
-  { id: 'default2', city: 'Ayodhya Darshan', name: 'Kanak Bhawan', photoUrls: ['https://images.unsplash.com/photo-1622308644420-b3020689b14b?q=80&w=800&auto=format&fit=crop'] },
-  { id: 'default3', city: 'Ayodhya Darshan', name: 'Hanuman Garhi', photoUrls: ['https://images.unsplash.com/photo-1561359313-0639aad49ca6?q=80&w=800&auto=format&fit=crop'] },
-  { id: 'default4', city: 'Ayodhya Darshan', name: 'Saryu Ghat', photoUrls: ['https://images.unsplash.com/photo-1600078686884-934d4e339b60?q=80&w=800&auto=format&fit=crop'] },
-  { id: 'default5', city: 'Varanasi Darshan', name: 'Assi Ghat', photoUrls: ['https://images.unsplash.com/photo-1583244532205-d4e511477484?q=80&w=800&auto=format&fit=crop'] },
-  { id: 'default6', city: 'Varanasi Darshan', name: 'Kashi Vishwanath Temple', photoUrls: ['https://images.unsplash.com/photo-1621213596702-8618ba6b48ba?q=80&w=800&auto=format&fit=crop'] },
-  { id: 'default7', city: 'Prayagraj', name: 'Sangam', photoUrls: ['https://images.unsplash.com/photo-1658428230554-dbf471e9a2b7?q=80&w=800&auto=format&fit=crop'] },
-  { id: 'default8', city: 'Prayagraj', name: 'Hanuman Mandir', photoUrls: ['https://images.unsplash.com/photo-1681283737525-4c0d024621c5?q=80&w=800&auto=format&fit=crop'] },
-  { id: 'default9', city: 'Prayagraj', name: 'Anand Bhawan', photoUrls: ['https://images.unsplash.com/photo-1634152962476-4b8a00e1915c?q=80&w=800&auto=format&fit=crop'] }
+  { id: 'd1', city: 'Ayodhya Darshan', name: 'Ram Mandir',         photoUrls: ['https://images.unsplash.com/photo-1706692997103-6cb6388dece2?q=80&w=900&auto=format&fit=crop'] },
+  { id: 'd2', city: 'Ayodhya Darshan', name: 'Kanak Bhawan',       photoUrls: ['https://images.unsplash.com/photo-1622308644420-b3020689b14b?q=80&w=900&auto=format&fit=crop'] },
+  { id: 'd3', city: 'Ayodhya Darshan', name: 'Hanuman Garhi',      photoUrls: ['https://images.unsplash.com/photo-1561359313-0639aad49ca6?q=80&w=900&auto=format&fit=crop'] },
+  { id: 'd4', city: 'Ayodhya Darshan', name: 'Saryu Ghat',         photoUrls: ['https://images.unsplash.com/photo-1600078686884-934d4e339b60?q=80&w=900&auto=format&fit=crop'] },
+  { id: 'd5', city: 'Varanasi Darshan', name: 'Assi Ghat',         photoUrls: ['https://images.unsplash.com/photo-1583244532205-d4e511477484?q=80&w=900&auto=format&fit=crop'] },
+  { id: 'd6', city: 'Varanasi Darshan', name: 'Kashi Vishwanath',  photoUrls: ['https://images.unsplash.com/photo-1621213596702-8618ba6b48ba?q=80&w=900&auto=format&fit=crop'] },
+  { id: 'd7', city: 'Varanasi Darshan', name: 'Namo Ghat',         photoUrls: ['https://images.unsplash.com/photo-1635865403483-8a3e16d3e78f?q=80&w=900&auto=format&fit=crop'] },
+  { id: 'd8', city: 'Prayagraj',       name: 'Sangam',             photoUrls: ['https://images.unsplash.com/photo-1658428230554-dbf471e9a2b7?q=80&w=900&auto=format&fit=crop'] },
+  { id: 'd9', city: 'Prayagraj',       name: 'Anand Bhawan',       photoUrls: ['https://images.unsplash.com/photo-1634152962476-4b8a00e1915c?q=80&w=900&auto=format&fit=crop'] },
 ];
 
-/* ─── PlaceCard ─────────────────────────────────────────────────── */
-const PlaceCard = ({ place }) => {
-  const image = place.photoUrl || (place.photoUrls && place.photoUrls.length > 0 ? place.photoUrls[0] : '');
-  return (
-    <div className="place-card">
-      <div className="place-img-container">
-        <img src={image} alt={place.name} className="place-img" draggable="false" />
-      </div>
-      <div className="place-info">
-        <h3 className="place-name">{place.name}</h3>
-      </div>
-    </div>
-  );
-};
-
-/* ─── helpers ───────────────────────────────────────────────────── */
-function getVisibleCount() {
-  if (typeof window !== 'undefined' && window.innerWidth <= 768) return 1;
-  return 3;
+/* ─── helpers ────────────────────────────────────────────────── */
+function getVC() {
+  return typeof window !== 'undefined' && window.innerWidth <= 768 ? 1 : 3;
 }
 
-/* ─── CitySection — one-by-one conveyor-belt carousel ─────────── */
-const CitySection = ({ city, places }) => {
-  const [visibleCount, setVisibleCount] = useState(getVisibleCount);
-  const [startIdx, setStartIdx]         = useState(0);
-  const [sliding, setSliding]           = useState(false);
+function mod(n, m) {
+  return ((n % m) + m) % m;
+}
 
-  const outerRef = useRef(null);   // clips overflow
-  const trackRef = useRef(null);   // slides left/right
+/* ─── CitySection ────────────────────────────────────────────── */
+const CitySection = ({ city, places }) => {
+  const [vc, setVc]           = useState(getVC);         // visible count
+  const [idx, setIdx]         = useState(0);             // index of first visible card
+  const [busy, setBusy]       = useState(false);
+
+  const trackRef = useRef(null);
   const timerRef = useRef(null);
 
-  const needsCarousel = places.length > visibleCount;
+  const n  = places.length;
+  const rc = vc + 2;                       // render count: 1 ghost each side
+  const needsCarousel = n > vc;
 
-  /* How many DOM cards we render (hidden leading + visible + hidden trailing) */
-  /* renderCount = visibleCount + 2 so we have 1 card peeking each side */
-  const renderCount = visibleCount + 2;
-
-  /* Which cards to put in the track starting from (startIdx - 1) */
-  const buildTrack = useCallback(
-    (sIdx) =>
-      Array.from({ length: renderCount }, (_, i) =>
-        places[((sIdx - 1 + i) % places.length + places.length) % places.length]
-      ),
-    [places, renderCount]
+  /* Build array of rc cards around idx: [prev-ghost, ...visible..., next-ghost] */
+  const buildDeck = useCallback(
+    (i) => Array.from({ length: rc }, (_, k) => places[mod(i - 1 + k, n)]),
+    [places, n, rc]
   );
 
-  const [trackCards, setTrackCards] = useState(() => buildTrack(0));
+  const [deck, setDeck] = useState(() => buildDeck(0));
 
-  /* Reposition track to hide the leading ghost card (slot index 1 = translateX -slotWidth) */
-  const resetTrack = useCallback(() => {
-    const outer = outerRef.current;
-    const track = trackRef.current;
-    if (!outer || !track) return;
-    const slotWidth = outer.getBoundingClientRect().width / visibleCount;
-    track.style.transition = 'none';
-    track.style.transform  = `translateX(-${slotWidth}px)`;
-  }, [visibleCount]);
+  /* Percentage helpers (all relative to TRACK width, not outer) */
+  /* One slot = 100% / rc of track = 100% / vc of outer */
+  const slotPct   = 100 / rc;           // % of track per slot
+  const initPct   = -slotPct;           // position 1: hide leading ghost
+  const fwdPct    = -slotPct * 2;       // position 2: forward
+  const bwdPct    = 0;                  // position 0: backward
 
-  /* After a state change that updates trackCards, re-apply the neutral position */
+  /* Set track translateX with NO transition (snap) */
+  const snapTo = useCallback((pct) => {
+    const t = trackRef.current;
+    if (!t) return;
+    t.style.transition = 'none';
+    t.style.transform  = `translateX(${pct}%)`;
+  }, []);
+
+  /* After deck changes, snap track back to neutral (useLayoutEffect = before paint → no flash) */
+  useLayoutEffect(() => {
+    snapTo(initPct);
+  }, [deck, snapTo, initPct]);
+
+  /* Window resize */
   useEffect(() => {
-    requestAnimationFrame(() => requestAnimationFrame(resetTrack));
-  }, [trackCards, resetTrack]);
-
-  /* Resize listener */
-  useEffect(() => {
-    const onResize = () => setVisibleCount(getVisibleCount());
+    const onResize = () => setVc(getVC());
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  /* Core slide function: direction +1 (forward) or -1 (backward) */
+  /* Core slide: direction +1 = forward, -1 = backward */
   const slide = useCallback(
-    (direction) => {
-      if (sliding || !needsCarousel) return;
+    (dir) => {
+      if (busy || !needsCarousel) return;
+      const t = trackRef.current;
+      if (!t) return;
 
-      const outer = outerRef.current;
-      const track = trackRef.current;
-      if (!outer || !track) return;
+      setBusy(true);
+      clearInterval(timerRef.current);
 
-      const slotWidth = outer.getBoundingClientRect().width / visibleCount;
-      /* neutral = -slotWidth; forward = -2*slotWidth; backward = 0 */
-      const target = direction === 1 ? -(slotWidth * 2) : 0;
+      const targetPct = dir === 1 ? fwdPct : bwdPct;
 
-      setSliding(true);
-      track.style.transition = 'transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-      track.style.transform  = `translateX(${target}px)`;
+      /* Animate */
+      t.style.transition = 'transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+      t.style.transform  = `translateX(${targetPct}%)`;
 
+      /* When done: update state (deck rebuild + snap back happens in useLayoutEffect) */
+      const onEnd = () => {
+        t.removeEventListener('transitionend', onEnd);
+        const nextIdx = mod(idx + dir, n);
+        setIdx(nextIdx);
+        setDeck(buildDeck(nextIdx));
+        setBusy(false);
+      };
+      t.addEventListener('transitionend', onEnd);
+
+      /* Safety net in case transitionend doesn't fire */
       setTimeout(() => {
-        const nextIdx =
-          ((startIdx + direction) % places.length + places.length) % places.length;
-        setStartIdx(nextIdx);
-        setTrackCards(buildTrack(nextIdx));
-        setSliding(false);
-        /* resetTrack fires via the useEffect above after trackCards updates */
-      }, 460);
+        t.removeEventListener('transitionend', onEnd);
+        if (busy) {
+          const nextIdx = mod(idx + dir, n);
+          setIdx(nextIdx);
+          setDeck(buildDeck(nextIdx));
+          setBusy(false);
+        }
+      }, 700);
     },
-    [sliding, needsCarousel, visibleCount, startIdx, places.length, buildTrack]
+    [busy, needsCarousel, fwdPct, bwdPct, idx, n, buildDeck]
   );
 
-  /* Auto-advance every 2 s */
+  /* Auto-advance */
   useEffect(() => {
     if (!needsCarousel) return;
-    timerRef.current = setInterval(() => slide(1), 2000);
+    timerRef.current = setInterval(() => slide(1), 2500);
     return () => clearInterval(timerRef.current);
   }, [needsCarousel, slide]);
 
-  /* Manual buttons */
-  const handlePrev = () => {
-    clearInterval(timerRef.current);
-    slide(-1);
-    timerRef.current = setInterval(() => slide(1), 2000);
-  };
-  const handleNext = () => {
-    clearInterval(timerRef.current);
-    slide(1);
-    timerRef.current = setInterval(() => slide(1), 2000);
+  const handlePrev = () => { slide(-1); timerRef.current = setInterval(() => slide(1), 2500); };
+  const handleNext = () => { slide( 1); timerRef.current = setInterval(() => slide(1), 2500); };
+
+  /* Track width (inline) */
+  const trackStyle = {
+    width:     `${(rc / vc) * 100}%`,
+    transform: `translateX(${initPct}%)`,   /* initial — overridden by useLayoutEffect anyway */
   };
 
-  /* CSS: each card slot = 1/visibleCount of outer; track = renderCount slots */
-  const slotPercent = `${100 / visibleCount}%`;
-  const trackWidth  = `${(renderCount / visibleCount) * 100}%`;
+  /* Each slot width (inline) */
+  const slotStyle = { width: `${slotPct}%`, flexShrink: 0 };
 
   return (
     <div className="city-section">
@@ -157,23 +158,29 @@ const CitySection = ({ city, places }) => {
           </button>
         )}
 
-        {/* Clipping box */}
-        <div className="carousel-outer" ref={outerRef}>
-          {/* Sliding track */}
-          <div
-            className="places-track"
-            ref={trackRef}
-            style={{ width: trackWidth }}
-          >
-            {trackCards.map((place, i) => (
-              <div
-                key={`${place.id}-slot-${i}`}
-                className="place-card-slot"
-                style={{ width: slotPercent }}
-              >
-                <PlaceCard place={place} />
-              </div>
-            ))}
+        {/* Clipping window */}
+        <div className="carousel-outer">
+          <div className="places-track" ref={trackRef} style={trackStyle}>
+            {deck.map((place, i) => {
+              const img = place.photoUrl ||
+                (place.photoUrls && place.photoUrls.length > 0 ? place.photoUrls[0] : '');
+              return (
+                <div key={`${place.id}-${i}`} className="place-slot" style={slotStyle}>
+                  <div className="place-card">
+                    <div className="place-img-wrap">
+                      <img
+                        src={img}
+                        alt={place.name}
+                        className="place-img"
+                        draggable="false"
+                        loading="lazy"
+                      />
+                    </div>
+                    <p className="place-name">{place.name}</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -184,22 +191,20 @@ const CitySection = ({ city, places }) => {
         )}
       </div>
 
-      {/* Dot indicators */}
+      {/* Dots */}
       {needsCarousel && (
         <div className="carousel-dots">
           {places.map((_, i) => (
             <span
               key={i}
-              className={`carousel-dot${i === startIdx ? ' active' : ''}`}
+              className={`carousel-dot${i === idx ? ' active' : ''}`}
               onClick={() => {
+                if (busy || i === idx) return;
                 clearInterval(timerRef.current);
-                const diff = ((i - startIdx) % places.length + places.length) % places.length;
-                let count = diff <= places.length / 2 ? diff : -(places.length - diff);
-                if (count === 0) return;
-                /* simple: just set directly */
-                setStartIdx(i);
-                setTrackCards(buildTrack(i));
-                timerRef.current = setInterval(() => slide(1), 2000);
+                const newIdx = i;
+                setIdx(newIdx);
+                setDeck(buildDeck(newIdx));
+                timerRef.current = setInterval(() => slide(1), 2500);
               }}
             />
           ))}
@@ -209,23 +214,22 @@ const CitySection = ({ city, places }) => {
   );
 };
 
-/* ─── Places (main export) ──────────────────────────────────────── */
+/* ─── Places ─────────────────────────────────────────────────── */
 export const Places = () => {
-  const [places, setPlaces]   = useState([]);
+  const [places,  setPlaces]  = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchPlaces = async () => {
+    (async () => {
       try {
-        const snapshot = await getDocs(collection(db, 'places'));
-        const fetched  = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setPlaces(fetched.length > 0 ? fetched : defaultPlaces);
+        const snap = await getDocs(collection(db, 'places'));
+        const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setPlaces(list.length > 0 ? list : defaultPlaces);
       } catch {
         setPlaces(defaultPlaces);
       }
       setLoading(false);
-    };
-    fetchPlaces();
+    })();
   }, []);
 
   if (loading || places.length === 0) return null;
