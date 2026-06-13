@@ -29,7 +29,7 @@ export const AdminPanel = () => {
 
   // Places State
   const [places, setPlaces] = useState([]);
-  const [placeForm, setPlaceForm] = useState({ name: '', photoUrls: [''], city: '' });
+  const [placeForm, setPlaceForm] = useState({ name: '', photos: [{ url: '', name: '' }], city: '' });
   const [editingPlaceId, setEditingPlaceId] = useState(null);
   const [placeSections, setPlaceSections] = useState([]);
   const [newPlaceSection, setNewPlaceSection] = useState('');
@@ -442,64 +442,75 @@ export const AdminPanel = () => {
   // Place Actions
   const handleSavePlace = async (e) => {
     e.preventDefault();
-    const validUrls = placeForm.photoUrls.filter(url => url.trim() !== '');
-    if (!placeForm.name || validUrls.length === 0 || !placeForm.city) {
-      alert("Please provide at least one valid image URL, name, and select a section.");
+    const validPhotos = placeForm.photos.filter(p => p.url.trim() !== '');
+    if (!placeForm.name || validPhotos.length === 0 || !placeForm.city) {
+      alert("Please provide at least one image URL, a place name, and select a section.");
       return;
     }
-    
+
     try {
-      const data = { name: placeForm.name, photoUrls: validUrls, city: placeForm.city };
-      // Keep legacy photoUrl populated for safety, set it to the first image
-      data.photoUrl = validUrls[0];
+      const photoUrls  = validPhotos.map(p => p.url);
+      const photoNames = validPhotos.map(p => p.name.trim());
+      const data = {
+        name: placeForm.name,
+        photoUrls,
+        photoNames,
+        city: placeForm.city,
+        photoUrl: photoUrls[0],   // legacy field
+      };
 
       if (editingPlaceId) {
-        await updateDoc(doc(db, "places", editingPlaceId), data);
-        alert("Place Updated Successfully!");
+        await updateDoc(doc(db, 'places', editingPlaceId), data);
+        alert('Place Updated Successfully!');
       } else {
-        await addDoc(collection(db, "places"), data);
-        alert("Place Added Successfully!");
+        await addDoc(collection(db, 'places'), data);
+        alert('Place Added Successfully!');
       }
-      setPlaceForm({ name: '', photoUrls: [''], city: placeSections.length > 0 ? placeSections[0].name : '' });
+      setPlaceForm({ name: '', photos: [{ url: '', name: '' }], city: placeSections.length > 0 ? placeSections[0].name : '' });
       setEditingPlaceId(null);
       fetchPlaces();
-    } catch(err) {
-      alert("Error saving place: " + err.message);
+    } catch (err) {
+      alert('Error saving place: ' + err.message);
     }
   };
 
   const handleEditPlace = (place) => {
     setEditingPlaceId(place.id);
-    let urls = [''];
-    if (place.photoUrls && place.photoUrls.length > 0) urls = place.photoUrls;
-    else if (place.photoUrl) urls = [place.photoUrl];
-
+    let photos = [{ url: '', name: '' }];
+    if (place.photoUrls && place.photoUrls.length > 0) {
+      photos = place.photoUrls.map((url, i) => ({
+        url,
+        name: (place.photoNames && place.photoNames[i]) || place.name || '',
+      }));
+    } else if (place.photoUrl) {
+      photos = [{ url: place.photoUrl, name: place.name || '' }];
+    }
     setPlaceForm({
       name: place.name,
-      photoUrls: urls,
-      city: place.city || (placeSections.length > 0 ? placeSections[0].name : '')
+      photos,
+      city: place.city || (placeSections.length > 0 ? placeSections[0].name : ''),
     });
   };
 
   const cancelEditPlace = () => {
     setEditingPlaceId(null);
-    setPlaceForm({ name: '', photoUrls: [''], city: placeSections.length > 0 ? placeSections[0].name : '' });
-  };
-  
-  const addPlaceUrlField = () => {
-    setPlaceForm({ ...placeForm, photoUrls: [...placeForm.photoUrls, ''] });
+    setPlaceForm({ name: '', photos: [{ url: '', name: '' }], city: placeSections.length > 0 ? placeSections[0].name : '' });
   };
 
-  const removePlaceUrlField = (index) => {
-    const newUrls = [...placeForm.photoUrls];
-    newUrls.splice(index, 1);
-    setPlaceForm({ ...placeForm, photoUrls: newUrls });
+  const addPlacePhotoField = () => {
+    setPlaceForm({ ...placeForm, photos: [...placeForm.photos, { url: '', name: '' }] });
   };
-  
-  const updatePlaceUrlField = (index, value) => {
-    const newUrls = [...placeForm.photoUrls];
-    newUrls[index] = value;
-    setPlaceForm({ ...placeForm, photoUrls: newUrls });
+
+  const removePlacePhotoField = (index) => {
+    const updated = [...placeForm.photos];
+    updated.splice(index, 1);
+    setPlaceForm({ ...placeForm, photos: updated });
+  };
+
+  const updatePlacePhoto = (index, field, value) => {
+    const updated = [...placeForm.photos];
+    updated[index] = { ...updated[index], [field]: value };
+    setPlaceForm({ ...placeForm, photos: updated });
   };
 
   const handleDeletePlace = async (id) => {
@@ -824,26 +835,35 @@ export const AdminPanel = () => {
                 />
                 
                 <div style={{ marginTop: '10px' }}>
-                  <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#64748b', display: 'block', marginBottom: '5px' }}>Image URLs (Slideshow)</label>
-                  {placeForm.photoUrls.map((url, index) => (
-                    <div key={index} style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
-                      {url && (
-                        <img src={url} alt="Preview" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} onError={(e) => e.target.style.display = 'none'} />
-                      )}
-                      <input 
-                        type="url" 
-                        placeholder="Photo URL (Direct Link)" 
-                        required={index === 0} 
-                        value={url} 
-                        onChange={(e) => updatePlaceUrlField(index, e.target.value)} 
-                        style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+                  <label style={{ fontSize: '14px', fontWeight: '700', color: '#2563eb', display: 'block', marginBottom: '8px' }}>Images & Names (each image gets its own name on the website)</label>
+                  {placeForm.photos.map((photo, index) => (
+                    <div key={index} style={{ background: '#f8faff', border: '1px solid #dbeafe', borderRadius: '10px', padding: '10px', marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
+                        {photo.url && (
+                          <img src={photo.url} alt="Preview" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 }} onError={(e) => e.target.style.display = 'none'} />
+                        )}
+                        <input
+                          type="text"
+                          placeholder={`Image Name (e.g. Ram Mandir)`}
+                          value={photo.name}
+                          onChange={(e) => updatePlacePhoto(index, 'name', e.target.value)}
+                          style={{ flex: 1, padding: '8px 10px', borderRadius: '7px', border: '1px solid #93c5fd', fontSize: '13px', fontWeight: '600' }}
+                        />
+                        {placeForm.photos.length > 1 && (
+                          <button type="button" onClick={() => removePlacePhotoField(index)} className="delete-btn-small" style={{ padding: '8px 10px' }}>&times;</button>
+                        )}
+                      </div>
+                      <input
+                        type="url"
+                        placeholder="Photo URL (Direct Link)"
+                        required={index === 0}
+                        value={photo.url}
+                        onChange={(e) => updatePlacePhoto(index, 'url', e.target.value)}
+                        style={{ width: '100%', padding: '8px 10px', borderRadius: '7px', border: '1px solid #d1d5db', fontSize: '13px', boxSizing: 'border-box' }}
                       />
-                      {placeForm.photoUrls.length > 1 && (
-                        <button type="button" onClick={() => removePlaceUrlField(index)} className="delete-btn-small" style={{ padding: '10px' }}>&times;</button>
-                      )}
                     </div>
                   ))}
-                  <button type="button" onClick={addPlaceUrlField} style={{ background: '#e2e8f0', color: '#334155', border: 'none', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>+ Add Another Image Link</button>
+                  <button type="button" onClick={addPlacePhotoField} style={{ background: '#2563eb', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '7px', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}>+ Add Another Image</button>
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>

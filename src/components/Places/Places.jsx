@@ -293,14 +293,20 @@ export const Places = () => {
     } else {
       // Multiple images (old-style destination) — expand into one card per image
       urls.forEach((url, i) => {
+        // Use individual photo name if available, else fall back to parent place name
+        const cardName = (p.photoNames && p.photoNames[i] && p.photoNames[i].trim())
+          ? p.photoNames[i].trim()
+          : p.name;
         acc[city].push({
           ...p,
           id: `${p.id}-img${i}`,
+          name: cardName,
           photoUrl: url,
           photoUrls: [url],
         });
       });
     }
+
     return acc;
   }, {});
 
