@@ -122,11 +122,23 @@ export const AdminPanel = () => {
   };
 
   const fetchPlaceSections = async () => {
-    const querySnapshot = await getDocs(collection(db, "place_sections"));
-    const fetched = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setPlaceSections(fetched);
-    if (fetched.length > 0 && !placeForm.city) {
-      setPlaceForm(prev => ({ ...prev, city: fetched[0].name }));
+    try {
+      const querySnapshot = await getDocs(collection(db, "place_sections"));
+      let fetched = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      if (fetched.length === 0) {
+        const defaults = ["Ayodhya Darshan", "Varanasi Darshan", "Prayagraj", "Chitrakoot", "Out Station"];
+        for (const name of defaults) {
+          await addDoc(collection(db, "place_sections"), { name });
+        }
+        const reSnapshot = await getDocs(collection(db, "place_sections"));
+        fetched = reSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      }
+      setPlaceSections(fetched);
+      if (fetched.length > 0 && !placeForm.city) {
+        setPlaceForm(prev => ({ ...prev, city: fetched[0].name }));
+      }
+    } catch (err) {
+      console.error("Error fetching place sections:", err);
     }
   };
 
