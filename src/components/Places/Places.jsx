@@ -42,7 +42,7 @@ const CitySection = ({ city, places }) => {
 
   const n  = places.length;
   const rc = vc + 2;                       // render count: 1 ghost each side
-  const needsCarousel = n > vc;
+  const needsCarousel = n > vc;            // only carousel when more cards than visible slots
 
   /* Build array of rc cards around idx: [prev-ghost, ...visible..., next-ghost] */
   const buildDeck = useCallback(
@@ -138,7 +138,51 @@ const CitySection = ({ city, places }) => {
   /* Each slot width (inline) */
   const slotStyle = { width: `${slotPct}%`, flexShrink: 0 };
 
+  /* ── Simple grid: fewer cards than visible slots ── */
+  if (!needsCarousel) {
+    return (
+      <div className="city-section">
+        <div className="city-header">
+          <div className="city-subtitle">
+            <div className="city-line" />
+            <span className="city-subtitle-text">Many Tourists Visit</span>
+            <div className="city-line" />
+          </div>
+          <h2 className="city-title">{city}</h2>
+        </div>
+        <div className="places-simple-row">
+          {places.map((place) => {
+            const img =
+              place.photoUrl ||
+              (place.photoUrls && place.photoUrls.length > 0 ? place.photoUrls[0] : '');
+            return (
+              <div
+                key={place.id}
+                className="place-slot-static"
+                style={{ width: `${100 / Math.min(n, vc)}%` }}
+              >
+                <div className="place-card">
+                  <div className="place-img-wrap">
+                    <img
+                      src={img}
+                      alt={place.name}
+                      className="place-img"
+                      draggable="false"
+                      loading="lazy"
+                    />
+                  </div>
+                  <p className="place-name">{place.name}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
+
     <div className="city-section">
       {/* Header */}
       <div className="city-header">
@@ -237,9 +281,29 @@ export const Places = () => {
   const grouped = places.reduce((acc, p) => {
     const city = p.city || 'Other Destinations';
     if (!acc[city]) acc[city] = [];
-    acc[city].push(p);
+
+    // Collect all image URLs for this place
+    const urls = [];
+    if (p.photoUrls && p.photoUrls.length > 0) urls.push(...p.photoUrls);
+    if (p.photoUrl && !urls.includes(p.photoUrl)) urls.unshift(p.photoUrl);
+
+    if (urls.length <= 1) {
+      // Single image — add as-is (new-style landmark card)
+      acc[city].push(p);
+    } else {
+      // Multiple images (old-style destination) — expand into one card per image
+      urls.forEach((url, i) => {
+        acc[city].push({
+          ...p,
+          id: `${p.id}-img${i}`,
+          photoUrl: url,
+          photoUrls: [url],
+        });
+      });
+    }
     return acc;
   }, {});
+
 
   return (
     <section className="places-section">

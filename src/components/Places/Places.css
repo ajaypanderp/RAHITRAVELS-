@@ -15,6 +15,19 @@
   margin-bottom: 80px;
 }
 
+/* Simple non-carousel row (used when cards ≤ visible slots) */
+.places-simple-row {
+  display: flex;
+  gap: 0;
+  width: 100%;
+}
+
+.place-slot-static {
+  flex-shrink: 0;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+
 /* Header */
 .city-header {
   text-align: center;
