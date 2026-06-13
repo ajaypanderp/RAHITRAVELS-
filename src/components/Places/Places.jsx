@@ -15,37 +15,97 @@ const defaultPlaces = [
   { id: 'default9', city: 'Prayagraj', name: 'Anand Bhawan', photoUrls: ['https://images.unsplash.com/photo-1634152962476-4b8a00e1915c?q=80&w=800&auto=format&fit=crop'] }
 ];
 
+
+
 const PlaceCard = ({ place, countClass }) => {
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
   const images = place.photoUrls && place.photoUrls.length > 0 ? place.photoUrls : (place.photoUrl ? [place.photoUrl] : []);
+
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
 
   useEffect(() => {
     if (images.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentImgIndex((prev) => (prev + 1) % images.length);
-    }, 3000); 
+    }, 4000); 
     return () => clearInterval(interval);
   }, [images.length]);
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    const diff = touchStartX.current - touchEndX.current;
+    if (diff > 50) {
+      setCurrentImgIndex((prev) => (prev + 1) % images.length);
+    } else if (diff < -50) {
+      setCurrentImgIndex((prev) => (prev - 1 + images.length) % images.length);
+    }
+    touchStartX.current = 0;
+    touchEndX.current = 0;
+  };
+
+  const handleMouseDown = (e) => {
+    touchStartX.current = e.clientX;
+    touchEndX.current = e.clientX;
+  };
+
+  const handleMouseMove = (e) => {
+    if (touchStartX.current) {
+      touchEndX.current = e.clientX;
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    const diff = touchStartX.current - touchEndX.current;
+    if (diff > 50) {
+      setCurrentImgIndex((prev) => (prev + 1) % images.length);
+    } else if (diff < -50) {
+      setCurrentImgIndex((prev) => (prev - 1 + images.length) % images.length);
+    }
+    touchStartX.current = 0;
+    touchEndX.current = 0;
+  };
 
   return (
     <div className={`place-card-wrapper ${countClass}`}>
       <div className="place-card">
-        <div className="place-img-container">
-          {images.map((img, idx) => (
-            <img 
-              key={idx}
-              src={img} 
-              alt={`${place.name} ${idx + 1}`} 
-              className="place-img"
-              style={{ 
-                position: idx === 0 ? 'relative' : 'absolute',
-                top: 0,
-                left: 0,
-                opacity: currentImgIndex === idx ? 1 : 0,
-                zIndex: currentImgIndex === idx ? 1 : 0
-              }} 
-            />
-          ))}
+        <div 
+          className="place-img-container"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={() => { touchStartX.current = 0; touchEndX.current = 0; }}
+          style={{ cursor: images.length > 1 ? 'grab' : 'default' }}
+        >
+          <div 
+            className="place-img-slider" 
+            style={{ 
+              width: `${images.length * 100}%`,
+              transform: `translateX(-${currentImgIndex * (100 / images.length)}%)`
+            }}
+          >
+            {images.map((img, idx) => (
+              <img 
+                key={idx}
+                src={img} 
+                alt={`${place.name} ${idx + 1}`} 
+                className="place-img place-img-slide"
+                draggable="false"
+              />
+            ))}
+          </div>
           {images.length > 1 && (
             <div className="slideshow-dots">
               {images.map((_, idx) => (

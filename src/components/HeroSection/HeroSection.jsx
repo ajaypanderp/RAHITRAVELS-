@@ -50,17 +50,19 @@ export const HeroSection = () => {
     if (heroImages.length <= 1) return;
 
     const interval = setInterval(() => {
-      // Fade out
+      // Slide out to the left and fade out
       gsap.to(imageRef.current, {
+        x: -80,
         opacity: 0,
-        duration: 0.5,
+        duration: 0.6,
+        ease: "power2.inOut",
         onComplete: () => {
           setCurrentIndex((prev) => (prev + 1) % heroImages.length);
-          // Fade in
-          gsap.to(imageRef.current, {
-            opacity: 1,
-            duration: 0.5
-          });
+          // Slide in from the right and fade in
+          gsap.fromTo(imageRef.current,
+            { x: 80, opacity: 0 },
+            { x: 0, opacity: 1, duration: 0.6, ease: "power2.out" }
+          );
         }
       });
     }, 5000); // 5 seconds interval

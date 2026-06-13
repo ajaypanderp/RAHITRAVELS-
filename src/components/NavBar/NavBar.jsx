@@ -85,7 +85,7 @@ export const Navbar = () => {
 
           <div className="text-container" onClick={scrollToTop} style={{cursor: 'pointer'}}>
             <h1 className="logo-text" style={{ fontSize: "1.5rem" }}>
-              Ayodhya Darshan <i className="ri-map-pin-2-fill"></i>Express
+              Ayodhya Darshan Express <i className="ri-map-pin-2-fill"></i>
             </h1>
           </div>
           
