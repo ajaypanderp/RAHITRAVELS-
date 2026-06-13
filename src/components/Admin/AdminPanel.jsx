@@ -31,6 +31,8 @@ export const AdminPanel = () => {
   const [places, setPlaces] = useState([]);
   const [placeForm, setPlaceForm] = useState({ name: '', photoUrls: [''], city: '' });
   const [editingPlaceId, setEditingPlaceId] = useState(null);
+  const [placeSections, setPlaceSections] = useState([]);
+  const [newPlaceSection, setNewPlaceSection] = useState('');
 
   // Visitors State
   const [visitors, setVisitors] = useState([]);
@@ -119,6 +121,15 @@ export const AdminPanel = () => {
     setPlaces(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
   };
 
+  const fetchPlaceSections = async () => {
+    const querySnapshot = await getDocs(collection(db, "place_sections"));
+    const fetched = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setPlaceSections(fetched);
+    if (fetched.length > 0 && !placeForm.city) {
+      setPlaceForm(prev => ({ ...prev, city: fetched[0].name }));
+    }
+  };
+
   const fetchVisitors = async () => {
     const querySnapshot = await getDocs(collection(db, "visitors"));
     const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -163,6 +174,7 @@ export const AdminPanel = () => {
       fetchHeroImages();
       fetchUsers();
       fetchPlaces();
+      fetchPlaceSections();
       fetchVisitors();
       fetchWhatsappSettings();
     }
@@ -388,12 +400,39 @@ export const AdminPanel = () => {
     }
   };
 
+  // Place Section Actions
+  const handleAddPlaceSection = async () => {
+    if (!newPlaceSection.trim()) return;
+    if (placeSections.some(s => s.name.toLowerCase() === newPlaceSection.trim().toLowerCase())) {
+      alert("Section already exists!");
+      return;
+    }
+    try {
+      await addDoc(collection(db, "place_sections"), { name: newPlaceSection.trim() });
+      setNewPlaceSection('');
+      fetchPlaceSections();
+    } catch (err) {
+      alert("Error adding section: " + err.message);
+    }
+  };
+
+  const handleDeletePlaceSection = async (id) => {
+    if (window.confirm("Delete this place section? Note: Places inside this section will not be deleted but they won't show in the dropdown anymore.")) {
+      try {
+        await deleteDoc(doc(db, "place_sections", id));
+        fetchPlaceSections();
+      } catch (err) {
+        alert("Error deleting section: " + err.message);
+      }
+    }
+  };
+
   // Place Actions
   const handleSavePlace = async (e) => {
     e.preventDefault();
     const validUrls = placeForm.photoUrls.filter(url => url.trim() !== '');
     if (!placeForm.name || validUrls.length === 0 || !placeForm.city) {
-      alert("Please provide at least one valid image URL, name, and city.");
+      alert("Please provide at least one valid image URL, name, and select a section.");
       return;
     }
     
@@ -409,7 +448,7 @@ export const AdminPanel = () => {
         await addDoc(collection(db, "places"), data);
         alert("Place Added Successfully!");
       }
-      setPlaceForm({ name: '', photoUrls: [''], city: '' });
+      setPlaceForm({ name: '', photoUrls: [''], city: placeSections.length > 0 ? placeSections[0].name : '' });
       setEditingPlaceId(null);
       fetchPlaces();
     } catch(err) {
@@ -426,13 +465,13 @@ export const AdminPanel = () => {
     setPlaceForm({
       name: place.name,
       photoUrls: urls,
-      city: place.city || ''
+      city: place.city || (placeSections.length > 0 ? placeSections[0].name : '')
     });
   };
 
   const cancelEditPlace = () => {
     setEditingPlaceId(null);
-    setPlaceForm({ name: '', photoUrls: [''], city: '' });
+    setPlaceForm({ name: '', photoUrls: [''], city: placeSections.length > 0 ? placeSections[0].name : '' });
   };
   
   const addPlaceUrlField = () => {
@@ -728,65 +767,105 @@ export const AdminPanel = () => {
       )}
 
       {activeTab === 'places' && (
-        <div className="admin-content full-width">
-          <div className="card" style={{ marginBottom: '20px', maxWidth: '500px' }}>
-            <h3>{editingPlaceId ? 'Edit Service Location' : 'Add Service Location'}</h3>
-            <form onSubmit={handleSavePlace} className="admin-form">
-              <input type="text" placeholder="Section Name (e.g. Ayodhya Darshan)" required value={placeForm.city} onChange={(e) => setPlaceForm({...placeForm, city: e.target.value})} />
-              <input type="text" placeholder="Place Name (e.g. Ram Mandir)" required value={placeForm.name} onChange={(e) => setPlaceForm({...placeForm, name: e.target.value})} />
-              
-              <div style={{ marginTop: '10px' }}>
-                <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#64748b', display: 'block', marginBottom: '5px' }}>Image URLs (Slideshow)</label>
-                {placeForm.photoUrls.map((url, index) => (
-                  <div key={index} style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
-                    {url && (
-                      <img src={url} alt="Preview" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} onError={(e) => e.target.style.display = 'none'} />
-                    )}
-                    <input 
-                      type="url" 
-                      placeholder="Photo URL (Direct Link)" 
-                      required={index === 0} 
-                      value={url} 
-                      onChange={(e) => updatePlaceUrlField(index, e.target.value)} 
-                      style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
-                    />
-                    {placeForm.photoUrls.length > 1 && (
-                      <button type="button" onClick={() => removePlaceUrlField(index)} className="delete-btn-small" style={{ padding: '10px' }}>&times;</button>
-                    )}
-                  </div>
+        <div className="admin-content">
+          <div className="admin-sidebar">
+            <div className="card">
+              <h3>Manage Place Sections</h3>
+              <div className="category-input">
+                <input 
+                  type="text" 
+                  value={newPlaceSection} 
+                  onChange={(e) => setNewPlaceSection(e.target.value)} 
+                  placeholder="New Section (e.g. Ayodhya Darshan)" 
+                />
+                <button type="button" onClick={handleAddPlaceSection}>Add</button>
+              </div>
+              <ul className="category-list">
+                {placeSections.map(sec => (
+                  <li key={sec.id}>
+                    {sec.name} 
+                    <button type="button" onClick={() => handleDeletePlaceSection(sec.id)} className="delete-btn-small">x</button>
+                  </li>
                 ))}
-                <button type="button" onClick={addPlaceUrlField} style={{ background: '#e2e8f0', color: '#334155', border: 'none', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>+ Add Another Image Link</button>
-              </div>
+              </ul>
+            </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-                <button type="submit" className="primary-btn" style={{ flex: 1 }}>{editingPlaceId ? 'Update Place' : 'Add Place'}</button>
-                {editingPlaceId && <button type="button" onClick={cancelEditPlace} className="secondary-btn">Cancel</button>}
-              </div>
-            </form>
+            <div className="card">
+              <h3>{editingPlaceId ? 'Edit Service Location' : 'Add Service Location'}</h3>
+              <form onSubmit={handleSavePlace} className="admin-form">
+                <select 
+                  value={placeForm.city} 
+                  onChange={(e) => setPlaceForm({...placeForm, city: e.target.value})} 
+                  required
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', marginBottom: '10px' }}
+                >
+                  <option value="" disabled>Select Section</option>
+                  {placeSections.map(sec => <option key={sec.id} value={sec.name}>{sec.name}</option>)}
+                </select>
+                
+                <input 
+                  type="text" 
+                  placeholder="Place Name (e.g. Ram Mandir)" 
+                  required 
+                  value={placeForm.name} 
+                  onChange={(e) => setPlaceForm({...placeForm, name: e.target.value})} 
+                />
+                
+                <div style={{ marginTop: '10px' }}>
+                  <label style={{ fontSize: '14px', fontWeight: 'bold', color: '#64748b', display: 'block', marginBottom: '5px' }}>Image URLs (Slideshow)</label>
+                  {placeForm.photoUrls.map((url, index) => (
+                    <div key={index} style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
+                      {url && (
+                        <img src={url} alt="Preview" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} onError={(e) => e.target.style.display = 'none'} />
+                      )}
+                      <input 
+                        type="url" 
+                        placeholder="Photo URL (Direct Link)" 
+                        required={index === 0} 
+                        value={url} 
+                        onChange={(e) => updatePlaceUrlField(index, e.target.value)} 
+                        style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+                      />
+                      {placeForm.photoUrls.length > 1 && (
+                        <button type="button" onClick={() => removePlaceUrlField(index)} className="delete-btn-small" style={{ padding: '10px' }}>&times;</button>
+                      )}
+                    </div>
+                  ))}
+                  <button type="button" onClick={addPlaceUrlField} style={{ background: '#e2e8f0', color: '#334155', border: 'none', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>+ Add Another Image Link</button>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                  <button type="submit" className="primary-btn" style={{ flex: 1 }}>{editingPlaceId ? 'Update Place' : 'Add Place'}</button>
+                  {editingPlaceId && <button type="button" onClick={cancelEditPlace} className="secondary-btn">Cancel</button>}
+                </div>
+              </form>
+            </div>
           </div>
           
-          <h3>Service Places</h3>
-          <div className="car-grid">
-            {places.map(p => (
-              <div key={p.id} className="car-card">
-                <div style={{ position: 'relative', height: '150px' }}>
-                  <img src={p.photoUrls && p.photoUrls.length > 0 ? p.photoUrls[0] : p.photoUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  {p.photoUrls && p.photoUrls.length > 1 && (
-                    <div style={{ position: 'absolute', bottom: '5px', right: '5px', background: 'rgba(0,0,0,0.6)', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>
-                      {p.photoUrls.length} Images
+          <div className="admin-main">
+            <h3>Service Places</h3>
+            <div className="car-grid">
+              {places.map(p => (
+                <div key={p.id} className="car-card">
+                  <div style={{ position: 'relative', height: '150px' }}>
+                    <img src={p.photoUrls && p.photoUrls.length > 0 ? p.photoUrls[0] : p.photoUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    {p.photoUrls && p.photoUrls.length > 1 && (
+                      <div style={{ position: 'absolute', bottom: '5px', right: '5px', background: 'rgba(0,0,0,0.6)', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>
+                        {p.photoUrls.length} Images
+                      </div>
+                    )}
+                  </div>
+                  <div className="car-info">
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#2563eb', display: 'block', marginBottom: '5px' }}>{p.city || 'Other'}</span>
+                    <h4>{p.name}</h4>
+                    <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                      <button onClick={() => handleEditPlace(p)} className="edit-btn" style={{ flex: 1 }}>Edit</button>
+                      <button onClick={() => handleDeletePlace(p.id)} className="delete-btn" style={{ flex: 1 }}>Delete</button>
                     </div>
-                  )}
-                </div>
-                <div className="car-info">
-                  <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#2563eb', display: 'block', marginBottom: '5px' }}>{p.city || 'Other'}</span>
-                  <h4>{p.name}</h4>
-                  <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                    <button onClick={() => handleEditPlace(p)} className="edit-btn" style={{ flex: 1 }}>Edit</button>
-                    <button onClick={() => handleDeletePlace(p.id)} className="delete-btn" style={{ flex: 1 }}>Delete</button>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}

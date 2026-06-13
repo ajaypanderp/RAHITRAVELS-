@@ -124,20 +124,7 @@
 
 .place-card-wrapper {
   flex-shrink: 0;
-}
-
-/* Card Widths Based on Count */
-.place-card-wrapper.count-1 {
-  width: 100%; /* Full width banner */
-  max-width: 1000px;
-}
-
-.place-card-wrapper.count-2 {
-  width: calc(50% - 15px); /* Two cards */
-}
-
-.place-card-wrapper.count-3, .place-card-wrapper.count-more {
-  width: calc(33.333% - 20px); /* Three or more cards */
+  width: calc(33.333% - 20px); /* Exactly three cards on desktop */
 }
 
 .place-card {
@@ -213,8 +200,8 @@
 
 /* Responsive Rules */
 @media (max-width: 1024px) {
-  .place-card-wrapper.count-3, .place-card-wrapper.count-more {
-    width: calc(50% - 15px); /* 2 per row on tablets */
+  .place-card-wrapper {
+    width: calc(50% - 15px) !important; /* 2 per row on tablets */
   }
 }
 
@@ -232,11 +219,7 @@
   }
   
   .place-card-wrapper {
-    width: 85% !important; /* Peek next card */
+    width: 100% !important; /* exactly one card on mobile */
     scroll-snap-align: center;
-  }
-  
-  .place-card-wrapper.count-1 {
-    width: 100% !important;
   }
 }
